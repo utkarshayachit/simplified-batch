@@ -1,0 +1,18 @@
+FROM alpine:3.16.2
+RUN apk add --no-cache \
+    py3-pip \
+    python3
+RUN python3 -m pip install --upgrade pip
+
+WORKDIR /opt/apps
+COPY apps/controller controller/
+COPY apps/grabber  grabber/
+
+WORKDIR /opt/apps/controller
+RUN pip install -e .
+
+WORKDIR /opt/apps/grabber
+RUN pip install -e .
+
+WORKDIR /opt/apps
+ENTRYPOINT ["/usr/bin/python3"]

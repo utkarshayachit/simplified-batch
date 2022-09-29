@@ -1,0 +1,26 @@
+#cloud-config
+
+# This is a cloud-init config file that sets up the Linux Jumpbox
+
+package_update: true
+package_upgrade: true
+packages:
+  - curl
+  - xfce4
+  - xrdp
+  - jq
+  - python3-pip
+  - wget
+runcmd:
+  - mkdir -p /run/helpers
+  - cd /run/helpers
+  # install azure cli
+  - curl -sL https://aka.ms/InstallAzureCLIDeb -o /run/helpers/init.bash
+  - bash /run/helpers/init.bash
+  # install batch explorer
+  - wget https://github.com/Azure/BatchExplorer/releases/download/v2.15.0-stable.634/batch-explorer_2.15.0-stable.634_amd64.deb
+  - dpkg -i /run/helpers/batch-explorer_2.15.0-stable.634_amd64.deb
+  # cleanup
+  - rm -rf /run/helpers
+final_message:
+  - 'Virtual Machine initialization complete.'

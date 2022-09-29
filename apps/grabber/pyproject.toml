@@ -1,0 +1,8 @@
+[project]
+name = "grabber"
+version = "0.0.1"
+dependencies = [
+    "azure-common",
+    "azure-identity",
+    "azure-keyvault"
+]

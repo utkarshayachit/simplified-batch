@@ -1,0 +1,10 @@
+[project]
+name = "batch_controller"
+version = "0.0.1"
+dependencies = [
+    "applicationinsights",
+    "azure-batch",
+    "azure-common",
+    "azure-identity",
+    "azure-keyvault"
+]
