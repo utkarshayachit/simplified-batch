@@ -11,14 +11,15 @@ This project currently includes the following demos.
 
 ### AzFinSim: Fintech Risk Simulation
 
-`azfinsim` is a simple application that models a typical trade
-risk analysis in fintech. While the application provided is a synthetic risk
+[AzFinSim](https://github.com/utkarshayachit/azfinsim/tree/refactor)
+is a simple application that models a typical trade
+risk analysis in FinTech. While the application provided is a synthetic risk
 simulation designed to demonstrate high throughput in a financial risk/grid
 scenario, the actual framework is generic enough to be applied to any
 embarrassingly parallel / high-throughput computing style scenario. If you have
 a large scale computing challenge to solve, deploying this example is a
 good place to start, and once running it's easy enough to insert your own code
-and libraries in place of azfinsim.
+and libraries in place of AzFinSim.
 
 Key features:
 
@@ -33,12 +34,12 @@ This section takes you through the steps involved in making a deployment.
 
 ### Prerequisites
 
-1. **Ensure valid subscription**: Ensure that you a chargeable Azure subscription that you can use and your have
-   `Owner` access to the subscription. 
+1. **Ensure valid subscription**: Ensure that you a chargeable Azure subscription that you
+   can use and you have `Owner` access to the subscription.
 
 2. **Accept legal terms**: The demos use container images that require you to accept
    legal terms. This only needs to be done once for the subscription. To accept these legal terms,
-   you need to execute the following Azure CLI command once. You can do this using the 
+   you need to execute the following Azure CLI command once. You can do this using the
    [Azure Cloud Shell](https://ms.portal.azure.com/#cloudshell/) in the [Azure portal](https://ms.portal.azure.com)
    or your local computer. To run these commands on your local computer, you must have Azure CLI installed.
 
@@ -74,23 +75,249 @@ This section takes you through the steps involved in making a deployment.
    az provider register -n Microsoft.Batch --subscription <your subscription name> --wait
    ```
 
-## Issues
+4. **Validate Batch account quotas**: Ensure that the region you will deploy under has 
+   not reached its batch service quota limit. Your subscription may have limits on
+   how many batch accounts can be created in a region. If you hit this limit, you
+   may have to delete old batch account, or deploy to a different region, or have the
+   limit increased by contacting your administrator.
 
-1. Getting a deployment script to execute `az ad sp ...` fails with insuffient
-   permissions so for now users have to manually run and enter the batch service
-   object id.
+### Using Azure CLI
+
+There are multiple ways of deploying any infrastructure in Azure. Here, we use
+[Azure CLI](https://learn.microsoft.com/en-us/cli/azure/)
+to deploy the infrastructure described using Bicep files.
+
+Make sure you have the latest [Azure CLI](https://learn.microsoft.com/en-us/cli/azure/) installed
+on your workstation. ALternatively, you can use the Azure Cloud Shell from Azure portal
+which already has the necessary tools installed.
+
+```sh
+# clone this repository
+git clone https://github.com/utkarshayachit/simplified-batch.git
+
+# change working directory
+cd simplified-batch
+
+# login to your account
+az login
+
+# set active subscription
+az account set -s <subscription name or ID>
+
+# location where you want to deploy
+AZ_LOCATION=eastus2
+
+# name for this deployment
+AZ_DEPLOYMENT_NAME=dpl-<your initials>-$AZ_LOCATION
+
+# a string to identify you (or any text you like)
+AZ_DEPLOYER=me@email.org
+
+# batch service object id obtained earlier
+AZ_BATCH_SERVICE_OBJECT_ID=<....>
+
+# some prefix used for resources etc.
+# this can be any alphanumeric string;
+# one suggestion is given below
+AZ_PREFIX=<your initials><MMDDYY><suffix>
+
+# create deployment
+az deployment sub create --location $AZ_LOCATION            \
+         --name $AZ_DEPLOYMENT_NAME                         \
+         --template-file infrastructure.bicep               \
+         --query properties.provisioningState               \
+         --output tsv                                       \
+         --parameters                                       \
+            prefix=$AZ_PREFIX                               \
+            deployer=$AZ_DEPLOYER                           \
+            batchServiceObjectId=$AZ_BATCH_SERVICE_OBJECT_ID
+# on success, this print
+Succeeded
+
+# if deployment succeeded, use this to get some deployment outputs.
+az deployment sub show --name $AZ_DEPLOYMENT_NAME        \
+   --query '{AZ_BATCH_ENDPOINT: properties.outputs.batchAccountEndpoint.value, AZ_ACR_NAME: properties.outputs.containerRegistryName.value}'
+# this will generate output of the form:
+{
+  "AZ_BATCH_ENDPOINT": "<url>",
+  "AZ_ACR_NAME": "<name>"
+}
+```
+
+This will trigger the deployment in a default configuration. Supported parameters
+and their details are given in the following section. The output text shows two values:
+URL for the batch service and the name of the container registry. Store these values
+so you can use them when executing the demo apps.
+
+### Parameters
+
+The following are required parameters:
+
+* **batchServiceObjectId** *(string)*: the object id for the Azure Batch Service
+  obtained using steps described in the prerequisites section.
+
+Here are the optional parameters:
+
+* **location** *(string, **default-value**: deployment location)*:
+  the location for all the resources. Currently,
+  pools without public IP addresses (which is what this setup uses) is only available
+  at the locations listed [here](https://learn.microsoft.com/en-us/azure/batch/simplified-compute-node-communication#supported-regions).
+
+* **environment** *([`dev`, `prod`], **default-value**: `dev`)*:
+  a string used to identify the deployment. Currently, this is just used to when creating
+  resource group names etc. Primarily intended to demonstrate how one can setup infrastructure
+  for different environment like testing, development production etc. with ease.
+
+* **prefix** *(string, **default-value**: `uniqueString(environment, subscription().id, location)`)*:
+  a prefix string used when naming groups, resources, and deployments. Makes it easier
+  to deploy multiple instances of this infrastructure under the same subscription.
+
+* **deployer** *(string, **default-value**: `someone@somedomain.com`)*:
+  a string that is added as a tag named `deployed-by` to the resource groups created.
+  while it may be used to determine who created these resources, it's does not serve
+  any specific purpose in this setup and only provided for illustrative purposes.
+
+* **useSingleResourceGroup** *(bool, **default-value**: `false`):
+  when set to true, all resources are created under a single group. Default is to create
+  different resource groups for resources as appropriate.
+
+* **enableDiagnostics** *(bool, **default-value**: `true`):
+  when enabled, log analytics workspace and application sights resources are created and used
+  to collect diagnostic information from resources.
+
+* **enableHubAndSpoke** *(bool, **default-value**: `false`):
+  when enabled, deploys the network in a hub-spoke topology. Default it simply use
+  a locked-down subset with full egress access and limited ingress.
+
+* **enableVPNGateway** *(bool, **default-value**: `false`):
+  this is only used when **enableHubAndSpoke** is `true`; when set to true a VPN gateway
+  is deployed in the hub to allow clients VPN into the network.
+
+* **enableAzFinSim** *(bool, **default-value**: `true`):
+  when set to true, enables the AzFinSim application demo and deploys extra resources needed
+  for the demo.
+
+## Demonstrations
+
+Once the deployment is successful, we can see each of the demos in action.
+
+### Preparing the environment for the demo applications
+
+The deployment step deploys the infrastructure i.e. the services, the network,
+the databases, etc. In a real-world production environment, one would then develop
+applications that use this infrastructure to perform the computation and generate
+results. In this project, we use simple Python-based applications that
+demonstrate this.
+
+To run these applications, you need Python (3.8 or newer) installed on your workstation.
+Alternatively, if you have Docker capable workstation, you can build and use the containerized
+version of these applications.
+
+#### Option 1: Using Docker
+
+```sh
+# ensure we're in the simplified-batch checkout, if not `cd` to it.
+cd .../simplified-batch
+
+# build the container image named 'batch-apps'
+docker build -t batch-apps:latest -f Dockerfile.apps .
+
+# test the container
+docker run -it batch-apps:latest -m batch_controller.azfinsim --help
+# this should generate the following output
+usage: azfinsim.py [-h] -e BATCH_ENDPOINT {pool,job,cache} ...
+...
+```
+
+#### Option 2: Using Python
+
+```sh
+# you may want to use a virtual environment
+
+# upgrade pip (if needed)
+python3 -m pip install --upgrade pip
+
+# install the controller application
+python3 -m pip install -e apps/controller
+
+# test the installation
+python3 -m batch_controller.azfinsim --help
+# this should generate the following output
+usage: azfinsim.py [-h] -e BATCH_ENDPOINT {pool,job,cache} ...
+...
+```
+
+## Demo: AzFinSim
+
+The AzFinSim demo application allows us to inspect the batch pool, resize it,
+and submit jobs to populate the cache with trades and process the trades from cache.
+The following snippets show how this can be done. Here, replace `python3` with
+`docker run -it batch-app:latest` if using the Docker option.
+
+```sh
+# these variables must be set to the values obtained on a
+# successful deployment (see `az deployment sub show ....`)
+AZ_BATCH_ENDPOINT=<...>
+AZ_ACR_NAME=<...>
+
+# get pool information
+python3 -m batch_controller.azfinsim pool -e $AZ_BATCH_ENDPOINT --info
+# output:
+=============================================
+azfinsim-pool (display name: '<n/a>')
+=============================================
+State: active (allocation state: steady)
+Current Dedicated Size: 0
+Current Spot Size: 0
+
+# By default, the pool is setup to have size 0, you can resize it using
+# `--resize` as follows
+python3 -m batch_controller.azfinsim pool -e $AZ_BATCH_ENDPOINT --resize 1
+
+# Resize continues in the background and can take a while.
+# You can check resize status using the same `--info` command as earlier.
+# Once the 'Current Dedicated Size' is 1 and allocation state changes to 'steady'
+# the resize complete.
+```
+
+The AzFinSim application analyzes trades from the redis cache deployed as
+part of the deployment. Thus, one of the first tasks is to populate the redis cache.
+Let's fill up the cache with 100,000 synthetic trades using the following command.
+
+```sh
+# populate 100,000 trades using 10 parallel tasks
+python3 -m batch_controller.azfinsim cache -e $AZ_BATCH_ENDPOINT -c $AZ_ACR_NAME \
+         --trade-window 100000 \
+         --tasks 10
+```
+
+Once the cache has been populated, we can analyze it by submitting another job as
+follows.
+
+```sh
+# process 100,000 trades using 10 parallel tasks
+python3 -m batch_controller.azfinsim job -e $AZ_BATCH_ENDPOINT -c $AZ_ACR_NAME \
+         --trade-window 100000 \
+         --tasks 10
+```
+
+### Monitoring
+
+Currently, you can use the Azure portal to monitor. Navigate to the batch account
+deployed and you can then navigate to the `pool`, `jobs` etc. to see the pool
+and job status. You can also use [Batch Explorer](https://github.com/Azure/BatchExplorer).
+We also plan to extend the `batch_controller.azfinsim` to support commands to
+monitor jobs and tasks in near future.
+
+
+## Architecture Overview
+
+[TODO] Let's take a look at the main resources used in this deployment.
 
 ## TODOs
 
-1. [x] `endpoints` need to created in the same resource group as the resource to which
-   we are adding that endpoint. Currently, they are all created under the same
-   resource-group. FIXME: doesn't work as expected (see redis)
-2. [ ] Add un-secured mode; this should make it easier for someone to try out the
-       application quickly; avoiding need for jumpboxes or vpn-gateways
-3. [ ] pools with different managed identities with access to different resources.
-4. [ ] spot-vm reclaming and checkpointing
-5. [x] redeployment fails due to some redis + endpoit error. -- fixed by ensuring setting
-       publicNetworkAccess to false on the cache by default. We may need to fix this when #2 is fixed
+* [ ] spot-vm reclaming and checkpointing
+
 
 ## Acknowledgements
 

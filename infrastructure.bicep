@@ -8,7 +8,6 @@ param location string = deployment().location
 
 @allowed([
   'dev'
-  'test'
   'prod'
 ])
 @description('the environment to deploy under')
@@ -31,45 +30,32 @@ param useSingleResourceGroup bool = false
 @description('enable diagnostics/logging')
 param enableDiagnostics bool = true
 
-@description('enable deployment of the VPN gateway')
-param enableVPNGateway bool = true
+@description('enable hub and spoke network deployment')
+param enableHubAndSpoke bool = false
 
-@description('enable jumbox deployment; primarily intended for debugging')
-param enableJumpbox bool = true
+@description('When `enableHubAndSpoke` is true, this enable deployment of VPN gateway')
+param enableVPNGateway bool = false
 
 @description('enable AzFinSim demo')
 param enableAzFinSim bool = true
 
-@minLength(4)
-@maxLength(20)
-@description('Username for both the Linux and Windows VM. Must only contain letters, numbers, hyphens, and underscores and may not start with a hyphen or number. Only needed when providing enableJumpbox=true.')
-param adminUsername string = 'azureadmin'
+param timestamp string = utcNow('g')
 
-@secure()
-// @minLength(12) -- Ideally we'd have this here, but to support the multiple varients we will remove it.
-@maxLength(70)
-@description('Password for both the Linux and Windows VM. Password must have 3 of the following: 1 lower case character, 1 upper case character, 1 number, and 1 special character. Must be at least 12 characters. Only needed when providing enableJumpbox=true.')
-param adminPassword string
-
-@description('deploy infrastructure in a locked-down mode')
-var deploySecured = (environment != 'dev')
+//-----------------------------------------------------------------------------
 
 var rsPrefix = '${environment}-${prefix}'
 var dplPrefix = 'dpl-${environment}-${prefix}'
 
-param timestamp string = utcNow('g')
-
+@description('tags added to resource groups')
 var tags = {
   'last deployed' : timestamp
   'deployed by': deployer
-  uda_deleteme: 'true'
 }
 
 var resourceGroupNamesMultiple = {
   mainRG: 'rg-${rsPrefix}'
   diagnosticsRG: 'rg-${rsPrefix}-diagnostics'
   networkRG: 'rg-${rsPrefix}-network'
-  jumpboxRG: 'rg-${rsPrefix}-jumpboxes'
   azfinsimRG: 'rg-${rsPrefix}-azfinsim'
 }
 
@@ -77,7 +63,6 @@ var resourceGroupNamesSingle = {
   mainRG: 'rg-${rsPrefix}'
   diagnosticsRG: 'rg-${rsPrefix}'
   networkRG: 'rg-${rsPrefix}'
-  jumpboxRG: 'rg-${rsPrefix}'
   azfinsimRG: 'rg-${rsPrefix}'
 }
 
@@ -112,14 +97,14 @@ module dplApplicationInsights 'modules/applicationInsights.bicep' = if (enableDi
   Deploy the network topology. We deploy a hub-spoke(s) network setup.
   The hub is deployed, however spokes are added as needed.
 */
-resource networkRG 'Microsoft.Resources/resourceGroups@2021-04-01' = if (deploySecured) {
+resource networkRG 'Microsoft.Resources/resourceGroups@2021-04-01' = {
   name: resourceGroupNames.networkRG
   location: location
   tags: tags
 }
 
 @description('deployment for network (hub/spoke)')
-module dplHubSpoke 'modules/hub_and_spoke.bicep' = if (deploySecured) {
+module dplHubSpoke 'modules/hub_and_spoke.bicep' = if (enableHubAndSpoke) {
   name: '${dplPrefix}-hubspoke'
   scope: networkRG
   params: {
@@ -128,6 +113,15 @@ module dplHubSpoke 'modules/hub_and_spoke.bicep' = if (deploySecured) {
     deployVirtualMachines: false
     adminPassword: 'notused'
     logAnalyticsWorkspaceId: (enableDiagnostics ? dplApplicationInsights.outputs.logAnalyticsWorkspace.id: '')
+  }
+}
+
+@description('deployment of simply spoke-only network')
+module dplSpoke 'modules/spoke.bicep' = if (!enableHubAndSpoke) {
+  name: '${dplPrefix}-spoke'
+  scope: networkRG
+  params: {
+    location: location
   }
 }
 
@@ -151,7 +145,6 @@ module dplStorage 'modules/storage.bicep' = {
   params: {
     location: location
     prefix: rsPrefix
-    enablePublicNetworkAccess: !deploySecured
     tags: tags
   }
 }
@@ -166,7 +159,7 @@ module dplResources 'modules/resources.bicep' = {
     location: location
     prefix: rsPrefix
     tags: tags
-    enablePublicNetworkAccess: !deploySecured
+    enableBatchAccountPublicNetworkAccess: true
     logAnalyticsWorkspaceId: (enableDiagnostics ? dplApplicationInsights.outputs.logAnalyticsWorkspace.id : '')
     baStorageAccount: dplStorage.outputs.storageAccounts[0]
     batchServiceObjectId: batchServiceObjectId
@@ -207,7 +200,8 @@ module dplAzFinSim 'apps/azfinsim/resources.bicep' = if (enableAzFinSim) {
       name: dplApplicationInsights.outputs.appInsights.name
       group: appInsightsRG.name
     } : {})
-    poolSubnetId: deploySecured? dplHubSpoke.outputs.vnetSpokeOne.snetPool.id : ''
+    poolSubnetId: enableHubAndSpoke? dplHubSpoke.outputs.vnetSpokeOne.snetPool.id : dplSpoke.outputs.vnet.snetPool.id
+
     logAnalyticsWorkspaceId: (enableDiagnostics ? dplApplicationInsights.outputs.logAnalyticsWorkspace.id : '')
   }
 }
@@ -220,61 +214,46 @@ module dplAzFinSim 'apps/azfinsim/resources.bicep' = if (enableAzFinSim) {
 var endpoints = concat(dplResources.outputs.endpoints, dplStorage.outputs.endpoints, (enableAzFinSim ? dplAzFinSim.outputs.endpoints: []))
 var dnszones = union(map(endpoints, arg => arg.privateDnsZoneName), [])
 
-module dplDNSZones 'modules/dnsZonesAndLinks.bicep' = if (deploySecured) {
+module dplDNSZones 'modules/dnsZonesAndLinks.bicep' = {
   scope: networkRG
   name: '${dplPrefix}-dnszones'
   params: {
     prefix: prefix
     dnsZones: dnszones
-    vnetLinks: deploySecured ? [
-        dplHubSpoke.outputs.vnetHub.id
-        dplHubSpoke.outputs.vnetSpokeOne.id
-    ] : []
+    vnetLinks: enableHubAndSpoke ? [
+      dplHubSpoke.outputs.vnetHub.id
+      dplHubSpoke.outputs.vnetSpokeOne.id
+    ] : [
+      dplSpoke.outputs.vnet.id
+    ]
     tags: tags
   }
 }
 
-module dplEndpoints 'modules/privateEndpoints.bicep' = if (deploySecured) {
+module dplEndpoints 'modules/privateEndpoints.bicep' = {
   scope: mainRG
   name: '${dplPrefix}-eps'
   params: {
     location: location
     endpoints: endpoints
     dnsZoneGroupName: networkRG.name
-    vnet: deploySecured ? {
+    vnet: enableHubAndSpoke ? {
       group: networkRG.name
       name: dplHubSpoke.outputs.vnetSpokeOne.name
       subnet: dplHubSpoke.outputs.vnetSpokeOne.snetResources.name
-    } : {}
+    } : {
+      group: networkRG.name
+      name: dplSpoke.outputs.vnet.name
+      subnet: dplSpoke.outputs.vnet.snetResources.name
+    }
   }
   dependsOn: [
     dplDNSZones
   ]
 }
 
-//------------------------------------------------------------------------------
-/**
-  Deploy jumpbox.
-*/
-resource jumpboxRG 'Microsoft.Resources/resourceGroups@2021-04-01' = if (enableJumpbox && deploySecured) {
-  name: resourceGroupNames.jumpboxRG
-  location: location
-  tags: tags
-}
+@description('Batch account endpoint')
+output batchAccountEndpoint string = dplResources.outputs.batchAccount.accountEndpoint
 
-module dplJumpboxes 'modules/jumpboxes.bicep' = if (enableJumpbox && deploySecured) {
-  scope: jumpboxRG
-  name: '${dplPrefix}-jumpboxes'
-  params: {
-    location: location
-    vnet: deploySecured ? {
-      group: networkRG.name
-      name: dplHubSpoke.outputs.vnetHub.name
-      subnet: dplHubSpoke.outputs.vnetHub.snetResources.name
-    } : {}
-    adminUsername: adminUsername
-    adminPassword: adminPassword
-    logAnalyticsWorkspaceId: (enableDiagnostics ? dplApplicationInsights.outputs.logAnalyticsWorkspace.id : '')
-    tags: tags
-  }
-}
+@description('Container Registry name')
+output containerRegistryName string = dplResources.outputs.acr.name

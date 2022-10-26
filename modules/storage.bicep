@@ -14,8 +14,8 @@ param tags object
 @maxLength(50)
 param saName string = take('sa0${join(split(guid('sa', prefix, resourceGroup().id), '-'), '')}', 24)
 
-@description('enable public network access')
-param enablePublicNetworkAccess bool
+@description('enable public network access to storage accounts')
+param enablePublicNetworkAccess bool = false
 
 resource sa 'Microsoft.Storage/storageAccounts@2022-05-01' = {
   name: saName

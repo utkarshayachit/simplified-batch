@@ -42,8 +42,8 @@ var enableDiagnostics = logAnalyticsWorkspaceId != '' ? true : false
 @description('Batch Service Object Id (az ad sp show --id "ddbf3205-c6bd-46ae-8127-60eb93363864" --query id)')
 param batchServiceObjectId string
 
-@description('enable public network access')
-param enablePublicNetworkAccess bool
+@description('enable public network access to  the batch account for control')
+param enableBatchAccountPublicNetworkAccess bool
 
 //------------------------------------------------------------------------------
 module builtinRoles 'builtinRoles.bicep' = {
@@ -69,7 +69,7 @@ resource keyVault 'Microsoft.KeyVault/vaults@2022-07-01' = {
     enabledForDiskEncryption: true
     enableRbacAuthorization: false /*see note above */
     enableSoftDelete: false         // in production, one may want to enable soft-delete.
-    publicNetworkAccess: enablePublicNetworkAccess ? 'enabled' : 'disabled'
+    publicNetworkAccess: 'disabled'
     tenantId: tenant().tenantId
     sku: {
       name: 'standard'
@@ -77,7 +77,7 @@ resource keyVault 'Microsoft.KeyVault/vaults@2022-07-01' = {
     }
     networkAcls: {
       bypass: 'AzureServices'
-      defaultAction: enablePublicNetworkAccess ? 'Allow' : 'Deny'
+      defaultAction: 'Deny'
     }
     accessPolicies: [
       {
@@ -146,7 +146,7 @@ resource acr 'Microsoft.ContainerRegistry/registries@2021-06-01-preview' = {
   }
   properties: {
     adminUserEnabled: false // only RBAC
-    publicNetworkAccess: enablePublicNetworkAccess ? 'Enabled' : 'Disabled'
+    publicNetworkAccess: 'Disabled'
     zoneRedundancy: 'Disabled'
     networkRuleBypassOptions: 'AzureServices'
   }
@@ -266,7 +266,7 @@ resource batchAccount 'Microsoft.Batch/batchAccounts@2022-06-01' = {
     } : {}
 
     poolAllocationMode: 'UserSubscription'
-    publicNetworkAccess: 'Enabled'
+    publicNetworkAccess: enableBatchAccountPublicNetworkAccess ? 'Enabled' : 'Disabled'
     networkProfile: {
        accountAccess: {
         /* we want to let user manage pools etc from the Internet */
@@ -281,6 +281,7 @@ resource batchAccount 'Microsoft.Batch/batchAccounts@2022-06-01' = {
        nodeManagementAccess: {
         // FIXME: limit to pool subnet
         defaultAction: 'Allow'
+        
        }
     }
 
@@ -362,6 +363,7 @@ output batchManagedIdentity object = {
 output batchAccount object = {
   name: batchAccount.name
   id: batchAccount.id
+  accountEndpoint: batchAccount.properties.accountEndpoint
 }
 
 @description('endpoints')

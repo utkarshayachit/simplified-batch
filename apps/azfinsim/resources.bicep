@@ -92,10 +92,11 @@ resource redisCache 'Microsoft.Cache/redis@2022-06-01' = if (enableRedis) {
   name: '${rsPrefix}-redis'
   location: location
   properties: {
+    // ref: https://learn.microsoft.com/en-us/azure/azure-cache-for-redis/cache-planning-faq#azure-cache-for-redis-performance
     sku: {
       capacity: 1
       family: 'C'
-      name: 'Standard'
+      name: 'Basic'
     }
     publicNetworkAccess: deploySecured ? 'Disabled' : 'Enabled'
   }
