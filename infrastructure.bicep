@@ -39,6 +39,9 @@ param enableVPNGateway bool = false
 @description('enable AzFinSim demo')
 param enableAzFinSim bool = true
 
+@description('enable LULESH-Catalyst demo')
+param enableLuleshCatalyst bool = true
+
 param timestamp string = utcNow('g')
 
 //-----------------------------------------------------------------------------
@@ -57,6 +60,7 @@ var resourceGroupNamesMultiple = {
   diagnosticsRG: 'rg-${rsPrefix}-diagnostics'
   networkRG: 'rg-${rsPrefix}-network'
   azfinsimRG: 'rg-${rsPrefix}-azfinsim'
+  luleshCatalystRG: 'rg-${rsPrefix}-lulesh-catalyst'
 }
 
 var resourceGroupNamesSingle = {
@@ -64,6 +68,7 @@ var resourceGroupNamesSingle = {
   diagnosticsRG: 'rg-${rsPrefix}'
   networkRG: 'rg-${rsPrefix}'
   azfinsimRG: 'rg-${rsPrefix}'
+  luleshCatalystRG: 'rg-${rsPrefix}'
 }
 
 var resourceGroupNames = useSingleResourceGroup ? resourceGroupNamesSingle : resourceGroupNamesMultiple
@@ -203,6 +208,35 @@ module dplAzFinSim 'apps/azfinsim/resources.bicep' = if (enableAzFinSim) {
     poolSubnetId: enableHubAndSpoke? dplHubSpoke.outputs.vnetSpokeOne.snetPool.id : dplSpoke.outputs.vnet.snetPool.id
 
     logAnalyticsWorkspaceId: (enableDiagnostics ? dplApplicationInsights.outputs.logAnalyticsWorkspace.id : '')
+  }
+}
+
+//------------------------------------------------------------------------------
+resource luleshCatalystRG 'Microsoft.Resources/resourceGroups@2021-04-01' = if (enableLuleshCatalyst) {
+  name: resourceGroupNames.luleshCatalystRG
+  location: location
+}
+
+module dplLuleshCatalyst 'apps/lulesh-catalyst/resources.bicep' = if (enableLuleshCatalyst) {
+  name: '${dplPrefix}-lulesh-catalyst-resources'
+  scope: luleshCatalystRG
+  params: {
+    location: location
+    environment: environment
+    prefix: prefix
+    poolSubnetId: enableHubAndSpoke? dplHubSpoke.outputs.vnetSpokeOne.snetPool.id : dplSpoke.outputs.vnet.snetPool.id
+    batchAccountInfo: {
+      name: dplResources.outputs.batchAccount.name
+      group: mainRG.name
+    }
+    acrInfo: {
+      name: dplResources.outputs.acr.name
+      group: mainRG.name
+    }
+    miInfo: {
+      name: dplResources.outputs.batchManagedIdentity.name
+      group: mainRG.name
+    }
   }
 }
 

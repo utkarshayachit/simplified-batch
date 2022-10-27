@@ -27,6 +27,31 @@ Key features:
 * executed by performing a parameter sweep in an embarrassingly parallel mode
 * `todo-->`: add more stuff that mentions important aspects of this demo
 
+### Catalyst-enabled LULESH: Scientific Simulation with 3D Visualization
+
+[LULESH](https://asc.llnl.gov/codes/proxy-apps/lulesh)  a simple application
+that represents other mainstream hydrocodes like [ALE3D](https://wci.llnl.gov/simulation/computer-codes/ale3d).
+It is hardcoded to solve a simple Sedov blast propagation problem. To make the
+results interesting, lets also say we want to generate visualization results to
+monitor the progress of the simulation. For that we use
+[ParaView](https://www.paraview.org/), an open source scientific data analysis
+and visualization tool that is widely used within the HPC community. ParaView supports
+in situ data processing API called Catalyst which makes it possible to generate
+visualization results inline with the simulation code, without having to save the
+simulation results to disk.
+
+This demo can be used as a template for any large scale batch data analysis and visualization
+problems typical in scientific computing applications.
+
+This demo uses a [public fork of LULESH](https://github.com/utkarshayachit/LULESH) which
+adds Catalyst API instrumentation to the simulation code.
+
+Key features:
+
+* 3D-rendering using ParaView-Catalyst
+* [todo] MPI
+* [todo] add other stuff (perhaps parameter sweep, custom script upload etc. etc.)
+
 ## Deployment
 
 Before you can try any of the demos, you first need to deploy the infrastructure on Azure.
@@ -75,7 +100,7 @@ This section takes you through the steps involved in making a deployment.
    az provider register -n Microsoft.Batch --subscription <your subscription name> --wait
    ```
 
-4. **Validate Batch account quotas**: Ensure that the region you will deploy under has 
+4. **Validate Batch account quotas**: Ensure that the region you will deploy under has
    not reached its batch service quota limit. Your subscription may have limits on
    how many batch accounts can be created in a region. If you hit this limit, you
    may have to delete old batch account, or deploy to a different region, or have the
@@ -197,6 +222,10 @@ Here are the optional parameters:
   when set to true, enables the AzFinSim application demo and deploys extra resources needed
   for the demo.
 
+* **enableLuleshCatalyst** *(bool, **default-value**: `true`):
+  when set to true, enables the LULESH-Catalyst application demo and deploys extra resources needed
+  for the demo.
+
 ## Demonstrations
 
 Once the deployment is successful, we can see each of the demos in action.
@@ -309,6 +338,9 @@ and job status. You can also use [Batch Explorer](https://github.com/Azure/Batch
 We also plan to extend the `batch_controller.azfinsim` to support commands to
 monitor jobs and tasks in near future.
 
+## Demo: LULESH-Catalyst
+
+[todo] notes about this demo
 
 ## Architecture Overview
 
@@ -317,7 +349,6 @@ monitor jobs and tasks in near future.
 ## TODOs
 
 * [ ] spot-vm reclaming and checkpointing
-
 
 ## Acknowledgements
 
