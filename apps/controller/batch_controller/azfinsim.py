@@ -8,14 +8,14 @@ def get_parser():
 
     poolParser = subparsers.add_parser('pool', help='pool operations')
     poolParser.add_argument('-e', '--batch-endpoint',
-        type=str, help='batch account endpoint', required=True)
+        type=str, help='batch account endpoint [REQUIRED]', required=True)
     poolParser.add_argument('-i', '--info', action='store_true', help='print pool information')
     poolParser.add_argument('-r','--resize', type=int, help='resize pool', metavar='SIZE', default=-1)
     poolParser.set_defaults(command_execute=execute_pool)
 
     jobParser = subparsers.add_parser('job', help='job operations')
     jobParser.add_argument('-e', '--batch-endpoint',
-        type=str, help='batch account endpoint', required=True)
+        type=str, help='batch account endpoint [REQUIRED]', required=True)
     jobParser.add_argument('-c','--container-registry-name',type=str, help='container registry url [REQUIRED]', required=True)
     jobParser.add_argument('-s','--start-trade', type=int, help='start trade number', default=0)
     jobParser.add_argument('-w','--trade-window', type=int, help='trade window i.e. total number of trades', default=0)
@@ -32,7 +32,7 @@ def get_parser():
 
     cacheParser = subparsers.add_parser('cache', help='cache operations')
     cacheParser.add_argument('-e', '--batch-endpoint',
-        type=str, help='batch account endpoint', required=True)
+        type=str, help='batch account endpoint [REQUIRED]', required=True)
     cacheParser.add_argument('-c','--container-registry-name',type=str, help='container registry url [REQUIRED]', required=True)
     cacheParser.add_argument('-s','--start-trade', type=int, help='start trade number', default=0)
     cacheParser.add_argument('-w','--trade-window', type=int, help='trade window i.e. total number of trades', default=0)
