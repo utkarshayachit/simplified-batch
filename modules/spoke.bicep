@@ -11,11 +11,6 @@ param tags object = {}
 @description('name for the vnet')
 param vnetName string = 'vnet-batch'
 
-
-module builtinRoles 'builtinRoles.bicep' = {
-  name: 'dpl-builtinRoles-spoke'
-}
-
 @description('just a default NSG')
 resource defaultNSG 'Microsoft.Network/networkSecurityGroups@2022-05-01' = {
   name: 'default-nsg'

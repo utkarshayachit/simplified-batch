@@ -46,9 +46,8 @@ param batchServiceObjectId string
 param enableBatchAccountPublicNetworkAccess bool
 
 //------------------------------------------------------------------------------
-module builtinRoles 'builtinRoles.bicep' = {
-  name: 'dpl-${prefix}-builtinRoles'
-}
+@description('bultin roles')
+var builtinRoles = loadJsonContent('builtinRoles.json')
 
 //------------------------------------------------------------------------------
 /*
@@ -193,7 +192,7 @@ resource roleAssignment 'Microsoft.Authorization/roleAssignments@2020-10-01-prev
   name: guid(batchManagedIdentity.id, keyVault.id, role)
   scope: keyVault
   properties: {
-    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', builtinRoles.outputs.roles[role])
+    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', builtinRoles[role])
     principalId: batchManagedIdentity.properties.principalId
     principalType: 'ServicePrincipal'
   }
@@ -207,7 +206,7 @@ resource roleAssignmentACR 'Microsoft.Authorization/roleAssignments@2022-04-01' 
   name: guid(batchManagedIdentity.id, acr.id, role)
   scope: acr
   properties: {
-    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', builtinRoles.outputs.roles[role])
+    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', builtinRoles[role])
     principalId: batchManagedIdentity.properties.principalId
     principalType: 'ServicePrincipal'
   }
@@ -218,7 +217,7 @@ resource roleAssignmentRG 'Microsoft.Authorization/roleAssignments@2022-04-01' =
   name: guid(batchManagedIdentity.id, resourceGroup().id, role)
   scope: resourceGroup()
   properties: {
-    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', builtinRoles.outputs.roles[role])
+    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', builtinRoles[role])
     principalId: batchManagedIdentity.properties.principalId
     principalType: 'ServicePrincipal'
   }
@@ -235,7 +234,7 @@ resource roleAssignmentSA 'Microsoft.Authorization/roleAssignments@2022-04-01' =
   properties: {
     principalId: batchManagedIdentity.properties.principalId
     principalType: 'ServicePrincipal'
-    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', builtinRoles.outputs.roles.StorageBlobDataContributor)
+    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', builtinRoles.StorageBlobDataContributor)
   }
 }
 
