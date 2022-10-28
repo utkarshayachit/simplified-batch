@@ -1,0 +1,19 @@
+{
+    "logs": [
+        {
+            "category": "allLogs",
+            "enabled": true,
+            "retentionPolicy": {
+                "days": 1,
+                "enabled": true
+            }
+        }
+    ],
+
+    "metrics": [
+        {
+            "category": "AllMetrics",
+            "enabled": true
+        }
+    ]
+}

@@ -47,7 +47,10 @@ param enableBatchAccountPublicNetworkAccess bool
 
 //------------------------------------------------------------------------------
 @description('bultin roles')
-var builtinRoles = loadJsonContent('builtinRoles.json')
+var builtinRoles = loadJsonContent('helpers/builtinRoles.json')
+
+@description('diagnostics settings')
+var diagnosticsSettings = loadJsonContent('helpers/diagnosticsConfig.json')
 
 //------------------------------------------------------------------------------
 /*
@@ -114,24 +117,11 @@ resource keyVault 'Microsoft.KeyVault/vaults@2022-07-01' = {
   tags: tags
 }
 
-resource kvdiagnostics 'Microsoft.Insights/diagnosticSettings@2021-05-01-preview' = if (enableDiagnostics) {
+resource keyVault_diagnostics 'Microsoft.Insights/diagnosticSettings@2021-05-01-preview' = if (!empty(logAnalyticsWorkspaceId)) {
   name: '${keyVault.name}-diag'
   scope: keyVault
-  properties: {
-    workspaceId: logAnalyticsWorkspaceId
-    logs: [
-     {
-      category: 'AuditEvent'
-      enabled: true
-      retentionPolicy: {
-        days: 1
-        enabled: true
-      }
-     } 
-    ]
-  }
+  properties: union({ workspaceId: logAnalyticsWorkspaceId }, diagnosticsSettings)
 }
-
 
 //------------------------------------------------------------------------------
 /**
@@ -154,27 +144,7 @@ resource acr 'Microsoft.ContainerRegistry/registries@2021-06-01-preview' = {
 resource acr_diagnostics 'Microsoft.Insights/diagnosticSettings@2021-05-01-preview' = if (enableDiagnostics) {
   name: '${acr.name}-diag'
   scope: acr
-  properties: {
-    workspaceId: logAnalyticsWorkspaceId
-    logs: [
-      {
-        category: 'ContainerRegistryRepositoryEvents'
-        enabled: true
-        retentionPolicy: {
-          days: 1
-          enabled:  true
-        }
-      }
-      {
-        category: 'ContainerRegistryLoginEvents'
-        enabled: true
-        retentionPolicy: {
-          days: 1
-          enabled:  true
-        }
-      }
-    ]
-  }
+  properties: union({ workspaceId: logAnalyticsWorkspaceId }, diagnosticsSettings)
 }
 
 //------------------------------------------------------------------------------
@@ -295,6 +265,12 @@ resource batchAccount 'Microsoft.Batch/batchAccounts@2022-06-01' = {
     roleAssignment
     roleAssignmentSA
   ]
+}
+
+resource batchAccount_diagnostics 'Microsoft.Insights/diagnosticSettings@2021-05-01-preview' = if (enableDiagnostics) {
+  name: '${batchAccount.name}-diag'
+  scope: batchAccount
+  properties: union({ workspaceId: logAnalyticsWorkspaceId }, diagnosticsSettings)
 }
 
 // References:
