@@ -979,6 +979,29 @@ resource vnetSpokeOne 'Microsoft.Network/virtualNetworks@2022-01-01' = {
           }
         }
       }
+      {
+        name: 'snet-web-serverfarms'
+        properties: {
+          addressPrefix: '10.100.3.0/24'
+          networkSecurityGroup: {
+            id: nsgResourcesSubnet.id
+          }
+          privateEndpointNetworkPolicies: 'Disabled'
+          privateLinkServiceNetworkPolicies: 'Disabled'
+          routeTable: {
+            id: routeNextHopToFirewall.id
+          }
+          delegations: [
+            {
+              name: 'Microsoft.Web.serverFarms'
+              properties: {
+                serviceName: 'Microsoft.Web/serverFarms'
+              }
+            }
+          ]
+        }
+      }
+ 
     ]
   }
 
@@ -990,6 +1013,9 @@ resource vnetSpokeOne 'Microsoft.Network/virtualNetworks@2022-01-01' = {
     name: 'snet-pool'
   }
 
+  resource snetWebServerfarms 'subnets' existing = {
+    name: 'snet-web-serverfarms'
+  }
 
   // Peer to regional hub (hub to spoke peering is in the hub resource)
   resource peerToHub 'virtualNetworkPeerings@2022-01-01' = {
@@ -1304,6 +1330,11 @@ output vnetSpokeOne object = {
   snetPool: {
     name: vnetSpokeOne::snetPool.name
     id: vnetSpokeOne::snetPool.id
+  }
+
+  snetWebServerfarms: {
+    name: vnetSpokeOne::snetWebServerfarms.name
+    id: vnetSpokeOne::snetWebServerfarms.id
   }
 }
 

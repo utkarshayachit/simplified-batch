@@ -1,0 +1,11 @@
+FROM node:18-alpine
+
+# default port on which the proxy server runs
+EXPOSE 80
+
+WORKDIR /opt/apps
+COPY apps/trame/webserver webserver/
+
+WORKDIR /opt/apps/webserver
+RUN npm install .
+ENTRYPOINT ["/usr/local/bin/node", "webserver.cjs", "-p",  "80"]

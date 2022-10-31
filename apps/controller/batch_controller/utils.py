@@ -36,7 +36,8 @@ Current Spot Size: {spot_size}
     allocation_state=info.allocation_state))
 
 def submit_job(endpoint, pool_id, num_tasks, task_command_lines, task_container_image=None,
-    container_run_options=None, job_id_prefix='job'):
+    container_run_options=None, job_id_prefix='job',
+    elevatedUser=False):
     """submit a new job"""
     client = login(endpoint)
     job_id = "{}-{}".format(job_id_prefix, unique_id())
@@ -44,10 +45,15 @@ def submit_job(endpoint, pool_id, num_tasks, task_command_lines, task_container_
     pool_info=models.PoolInformation(pool_id=pool_id)
     client.job.add(models.JobAddParameter(id=job_id, pool_info=pool_info))
 
+    user = models.UserIdentity(\
+        auto_user=models.AutoUserSpecification(scope='pool',
+            elevation_level='admin')) if elevatedUser else None
+
     task_container_settings = models.TaskContainerSettings(image_name=task_container_image,
         container_run_options=container_run_options) if task_container_image else None
     tasks = [models.TaskAddParameter(id="task_{}".format(index),
                 command_line=cmd,
+                user_identity=user,
                 container_settings=task_container_settings) for index, cmd in enumerate(task_command_lines)]
     res = client.task.add_collection(job_id, tasks)
     # print(res)
@@ -57,3 +63,9 @@ def submit_job(endpoint, pool_id, num_tasks, task_command_lines, task_container_
     client.job.update(job_id=job_id,
         job_update_parameter=models.JobUpdateParameter(on_all_tasks_complete='terminateJob',
         pool_info=pool_info))
+
+    return {
+        'job_id': job_id,
+        'task_ids': ['task_{}'.format(index) for index in range(len(task_command_lines))],
+        'pool_id': pool_id,
+    }

@@ -28,6 +28,9 @@ param environment string
 @minLength(5)
 @maxLength(13)
 param prefix string
+
+@description('repository branch name')
+param branchName string
 ///@}
 
 ///@{
@@ -127,7 +130,7 @@ var envVars = {
   IMAGE_TAG_1: 'azfinsim/azfinsim:latest'
   DOCKER_FILE_1: 'Dockerfile'
 
-  SOURCE_LOCATION_2: 'https://github.com/utkarshayachit/simplified-batch#main'
+  SOURCE_LOCATION_2: 'https://github.com/utkarshayachit/simplified-batch#${branchName}'
   IMAGE_TAG_2: 'azfinsim/tools:latest'
   DOCKER_FILE_2: 'Dockerfile.apps'
 }

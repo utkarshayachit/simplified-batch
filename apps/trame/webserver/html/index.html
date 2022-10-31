@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <link href="https://fonts.googleapis.com/css?family=Roboto:100,300,400,500,700,900" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/@mdi/font@6.x/css/materialdesignicons.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/vuetify@2.x/dist/vuetify.min.css" rel="stylesheet">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, minimal-ui">
+</head>
+<body>
+  <div id="app">
+    <v-app>
+      <v-app-bar app>
+        Cloud Data Viewer
+      </v-app-bar>
+      <v-main app>
+        <v-container v-if="error.show">
+          <v-dialog v-model="error.show" max-width="300">
+            <v-card>
+              <v-card-title class="text-h5">
+                {{error.title}}
+              </v-card-title>
+              <v-card-text> {{error.message}} </v-card-text>
+              <v-card-actions>
+                <v-spacer></v-spacer>
+                <v-btn color="red darken-1" text @click="error.show = false">Ok</v-btn>
+              </v-card-actions>
+            </v-card>
+          </v-dialog>
+        </v-container>
+        <home v-else-if="page.current ==='home'"
+          @connect="fetch_datasets">
+        </home>
+        <storage-viewer v-else-if="page.current==='storageViewer'"
+          @clicked="visualize"
+          @failed="(msg) => on_error('Error: Storage Access', msg, 'home')">
+        </storage-viewer>
+        <viewer v-else-if="page.current==='viewer'"
+          :dataset="dataset"
+          :container="container"
+          @done="go_to('storageViewer')"
+          @failed="(msg) => on_error('Error: Visualize', msg, 'storageViewer')">
+        </viewer>
+     </v-main>
+      <v-footer app paddless height="30">
+        <a class="text-caption" href="https://kitware.github.io/trame/">trame</a>:
+        <a class="text-caption" href="https://paraview.org/">paraview</a>
+        <v-spacer></v-spacer>
+        <a class="text-caption" href="https://azure.microsoft.com/">azure</a>
+      </v-footer>
+    </v-app>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/vue@2.x/dist/vue.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/vuetify@2.x/dist/vuetify.js"></script>
+  <script type="module">
+    import home from '/static/connect.js';
+    import storageViewer from "/static/storageViewer.js";
+    import viewer from "/static/viewer.js";
+
+    const app = new Vue({
+      el: '#app',
+      vuetify: new Vuetify(),
+
+      components: {
+        home,
+        storageViewer,
+        viewer,
+      },
+
+      methods: {
+        fetch_datasets() {
+          this.page.current = 'storageViewer'
+        },
+
+        visualize(datasetName, containerName) {
+          this.dataset = datasetName;
+          this.container = containerName;
+          this.page.current = 'viewer';
+        },
+
+        go_to(page) {
+          this.page.current = page
+        },
+
+        on_error(title, message, nextPage) {
+          console.log(title, message)
+          this.error.title = title
+          this.error.message = message
+          this.error.show = true
+          this.go_to(nextPage || 'home')
+        },
+      },
+      data: () => ({
+        page: {
+          current: 'home',
+          last: 'error',
+          next: 'error'
+        },
+        error: {
+          show: false,
+          title: undefined,
+          message: undefined,
+        },
+        dataset: '',
+        container: '',
+      })
+    });
+  </script>
+</body>
+</html>

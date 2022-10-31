@@ -42,6 +42,12 @@ param enableAzFinSim bool = true
 @description('enable LULESH-Catalyst demo')
 param enableLuleshCatalyst bool = true
 
+@description('enable trame demo')
+param enableTrame bool = true
+
+@description('repository branch name')
+param branchName string = 'main'
+
 param timestamp string = utcNow('g')
 
 //-----------------------------------------------------------------------------
@@ -61,6 +67,7 @@ var resourceGroupNamesMultiple = {
   networkRG: 'rg-${rsPrefix}-network'
   azfinsimRG: 'rg-${rsPrefix}-azfinsim'
   luleshCatalystRG: 'rg-${rsPrefix}-lulesh-catalyst'
+  trameRG: 'rg-${rsPrefix}-trame'
 }
 
 var resourceGroupNamesSingle = {
@@ -69,6 +76,7 @@ var resourceGroupNamesSingle = {
   networkRG: 'rg-${rsPrefix}'
   azfinsimRG: 'rg-${rsPrefix}'
   luleshCatalystRG: 'rg-${rsPrefix}'
+  trameRG: 'rg-${rsPrefix}'
 }
 
 var resourceGroupNames = useSingleResourceGroup ? resourceGroupNamesSingle : resourceGroupNamesMultiple
@@ -185,6 +193,7 @@ module dplAzFinSim 'apps/azfinsim/resources.bicep' = if (enableAzFinSim) {
     location: location
     environment: environment
     prefix: prefix
+    branchName: branchName
     keyVaultInfo: {
       name: dplResources.outputs.keyVault.name
       group: mainRG.name
@@ -241,11 +250,66 @@ module dplLuleshCatalyst 'apps/lulesh-catalyst/resources.bicep' = if (enableLule
 }
 
 //------------------------------------------------------------------------------
+resource trameRG 'Microsoft.Resources/resourceGroups@2021-04-01' = if (enableTrame) {
+  name: resourceGroupNames.trameRG
+  location: location
+}
+
+module dplTrame 'apps/trame/resources.bicep' = if (enableTrame) {
+  name: '${dplPrefix}-trame-resources'
+  scope: trameRG
+  params: {
+    location: location
+    rsPrefix: rsPrefix
+    branchName: branchName
+   acrInfo: {
+      name: dplResources.outputs.acr.name
+      group: mainRG.name
+    }
+    miInfo: {
+      name: dplResources.outputs.batchManagedIdentity.name
+      group: mainRG.name
+    }
+  }
+}
+
+module dplTrameWebsite 'apps/trame/websites.bicep' = if (enableTrame) {
+  name: '${dplPrefix}-trame-websites'
+  scope: trameRG
+  params: {
+    location: location
+    dplPrefix: dplPrefix
+    rsPrefix: rsPrefix
+    batchAccountInfo: {
+      name: dplResources.outputs.batchAccount.name
+      group: mainRG.name
+    }
+    miInfo: {
+      name: dplResources.outputs.batchManagedIdentity.name
+      group: mainRG.name
+    }
+    saInfo: dplTrame.outputs.saInfo
+    acrInfo: {
+      name: dplResources.outputs.acr.name
+      group: mainRG.name
+    }
+    poolSubnetId: enableHubAndSpoke? dplHubSpoke.outputs.vnetSpokeOne.snetPool.id : dplSpoke.outputs.vnet.snetPool.id
+    appServiceSubnetId: enableHubAndSpoke? dplHubSpoke.outputs.vnetSpokeOne.snetWebServerfarms.id : dplSpoke.outputs.vnet.snetWebServerfarms.id
+    containerImages: dplTrame.outputs.containerImages
+  }
+  dependsOn: [
+    dplEndpoints
+  ]
+}
+//------------------------------------------------------------------------------
 /**
   Next we setup private endpoints. This is a two step process;
   first, we deploy private DNS zones and virtual network links
 */
-var endpoints = concat(dplResources.outputs.endpoints, dplStorage.outputs.endpoints, (enableAzFinSim ? dplAzFinSim.outputs.endpoints: []))
+var endpoints = concat(dplResources.outputs.endpoints, dplStorage.outputs.endpoints,
+     (enableAzFinSim ? dplAzFinSim.outputs.endpoints: []),
+     (enableTrame? dplTrame.outputs.endpoints : []))
+
 var dnszones = union(map(endpoints, arg => arg.privateDnsZoneName), [])
 
 module dplDNSZones 'modules/dnsZonesAndLinks.bicep' = {
@@ -291,3 +355,6 @@ output batchAccountEndpoint string = dplResources.outputs.batchAccount.accountEn
 
 @description('Container Registry name')
 output containerRegistryName string = dplResources.outputs.acr.name
+
+@description('trame website URL')
+output trameURL string = enableTrame ? dplTrameWebsite.outputs.websiteURL : ''

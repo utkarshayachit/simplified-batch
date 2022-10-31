@@ -48,7 +48,7 @@ resource saContainer 'Microsoft.Storage/storageAccounts/blobServices/containers@
   name: 'container0'
   parent: sa::blobServices
   properties: {
-    publicAccess: enablePublicNetworkAccess? 'Blob' : 'None'
+    publicAccess: enablePublicNetworkAccess? 'Container' : 'None'
   }
 }
 

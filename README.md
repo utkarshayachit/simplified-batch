@@ -52,6 +52,14 @@ Key features:
 * [todo] MPI
 * [todo] add other stuff (perhaps parameter sweep, custom script upload etc. etc.)
 
+### trame: interactive web-based 3D visualization using trame and ParaView
+
+Visualizing computation results is key to gaining insights from HPC workloads. This application
+demonstrates how we can use Azure Batch to support a website that lets users visualize scientific
+datasets interactively from the browser itself.
+
+![trame demo](images/trame.gif)
+
 ## Deployment
 
 Before you can try any of the demos, you first need to deploy the infrastructure on Azure.
@@ -161,18 +169,19 @@ Succeeded
 
 # if deployment succeeded, use this to get some deployment outputs.
 az deployment sub show --name $AZ_DEPLOYMENT_NAME        \
-   --query '{AZ_BATCH_ENDPOINT: properties.outputs.batchAccountEndpoint.value, AZ_ACR_NAME: properties.outputs.containerRegistryName.value}'
+   --query '{AZ_BATCH_ENDPOINT: properties.outputs.batchAccountEndpoint.value, AZ_ACR_NAME: properties.outputs.containerRegistryName.value, TRAME_WEBSITE_URL: properties.outputs.trameURL.value}'
 # this will generate output of the form:
 {
   "AZ_BATCH_ENDPOINT": "<url>",
-  "AZ_ACR_NAME": "<name>"
+  "AZ_ACR_NAME": "<name>",
+  "TRAME_WEBSITE_URL": "<url>"
 }
 ```
 
 This will trigger the deployment in a default configuration. Supported parameters
-and their details are given in the following section. The output text shows two values:
-URL for the batch service and the name of the container registry. Store these values
-so you can use them when executing the demo apps.
+and their details are given in the following section. The output text shows three values:
+URL for the batch service, the name of the container registry, and, if `trame` application
+was enabled, then the URL for the trame website. Store these values so you can use them when executing the demo apps.
 
 ### Parameters
 
@@ -202,29 +211,37 @@ Here are the optional parameters:
   while it may be used to determine who created these resources, it's does not serve
   any specific purpose in this setup and only provided for illustrative purposes.
 
-* **useSingleResourceGroup** *(bool, **default-value**: `false`):
+* **useSingleResourceGroup** *(bool, **default-value**: `false`)*:
   when set to true, all resources are created under a single group. Default is to create
   different resource groups for resources as appropriate.
 
-* **enableDiagnostics** *(bool, **default-value**: `true`):
+* **enableDiagnostics** *(bool, **default-value**: `true`)*:
   when enabled, log analytics workspace and application sights resources are created and used
   to collect diagnostic information from resources.
 
-* **enableHubAndSpoke** *(bool, **default-value**: `false`):
+* **enableHubAndSpoke** *(bool, **default-value**: `false`)*:
   when enabled, deploys the network in a hub-spoke topology. Default it simply use
   a locked-down subset with full egress access and limited ingress.
 
-* **enableVPNGateway** *(bool, **default-value**: `false`):
+* **enableVPNGateway** *(bool, **default-value**: `false`)*:
   this is only used when **enableHubAndSpoke** is `true`; when set to true a VPN gateway
   is deployed in the hub to allow clients VPN into the network.
 
-* **enableAzFinSim** *(bool, **default-value**: `true`):
+* **enableAzFinSim** *(bool, **default-value**: `true`)*:
   when set to true, enables the AzFinSim application demo and deploys extra resources needed
   for the demo.
 
-* **enableLuleshCatalyst** *(bool, **default-value**: `true`):
+* **enableLuleshCatalyst** *(bool, **default-value**: `true`)*:
   when set to true, enables the LULESH-Catalyst application demo and deploys extra resources needed
   for the demo.
+
+* **enableTrame** *(bool, **default-value**: `true`)*:
+  when set to true, enables the trame application demo and deploys extra resources needed
+  for the demo.
+
+* **branchName** *(string, **default-value**: `main`)*:
+  primarily intended for development purposes, identifies the branch from this repository
+  to use in the deployment.
 
 ## Demonstrations
 

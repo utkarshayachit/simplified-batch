@@ -47,6 +47,38 @@ resource batchPoolNSG 'Microsoft.Network/networkSecurityGroups@2022-05-01' = {
   }
 }
 
+resource publicip 'Microsoft.Network/publicIPAddresses@2021-05-01' = {
+  name: 'nat-pip'
+  location: location
+  sku: {
+    name: 'Standard'
+  }
+  properties: {
+    publicIPAddressVersion: 'IPv4'
+    publicIPAllocationMethod: 'Static'
+    idleTimeoutInMinutes: 4
+  }
+}
+
+// batch pools need internet access when mouting shared file systems
+// using NFS, etc.
+@description('natgateway for outbound connectivity to the pools')
+resource natgateway 'Microsoft.Network/natGateways@2021-05-01' = {
+  name: 'nat-gateway'
+  location: location
+  sku: {
+    name: 'Standard'
+  }
+  properties: {
+    idleTimeoutInMinutes: 4
+    publicIpAddresses: [
+      {
+        id: publicip.id
+      }
+    ]
+  }
+}
+
 @description('the virtual network')
 resource vnet 'Microsoft.Network/virtualNetworks@2022-05-01' = {
   name: vnetName
@@ -69,7 +101,7 @@ resource vnet 'Microsoft.Network/virtualNetworks@2022-05-01' = {
           networkSecurityGroup: {
             id: defaultNSG.id
           }
-        }
+       }
       }
       {
         name: 'snet-pool'
@@ -80,6 +112,28 @@ resource vnet 'Microsoft.Network/virtualNetworks@2022-05-01' = {
           networkSecurityGroup: {
             id: defaultNSG.id
           }
+          natGateway: {
+            id: natgateway.id
+          }
+        }
+      }
+      {
+        name: 'snet-web-serverfarms'
+        properties: {
+          addressPrefix: '10.10.2.0/24'
+          networkSecurityGroup: {
+            id: defaultNSG.id
+          }
+          privateEndpointNetworkPolicies: 'Disabled'
+          privateLinkServiceNetworkPolicies: 'Disabled'
+          delegations: [
+            {
+              name: 'Microsoft.Web.serverFarms'
+              properties: {
+                serviceName: 'Microsoft.Web/serverFarms'
+              }
+            }
+          ]
         }
       }
     ]
@@ -91,6 +145,10 @@ resource vnet 'Microsoft.Network/virtualNetworks@2022-05-01' = {
 
   resource snetPool 'subnets' existing = {
     name: 'snet-pool'
+  }
+
+  resource snetWebServerfarms 'subnets' existing = {
+    name: 'snet-web-serverfarms'
   }
 }
 
@@ -108,6 +166,11 @@ output vnet object = {
   snetPool: {
     name: vnet::snetPool.name
     id: vnet::snetPool.id
+  }
+
+  snetWebServerfarms: {
+    name: vnet::snetWebServerfarms.name
+    id: vnet::snetWebServerfarms.id
   }
 }
 
