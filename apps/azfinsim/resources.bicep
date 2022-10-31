@@ -68,10 +68,6 @@ var rsPrefix = '${environment}-${prefix}-azfinsim'
 var dplPrefix = 'dpl-${environment}-${prefix}-azfinsim'
 var enableDiagnostics = logAnalyticsWorkspaceId != ''
 var deploySecured = (environment != 'dev')
-var enableRedis = true
-
-@description('diagnostics settings')
-var diagnosticsSettings = loadJsonContent('../../modules/helpers/diagnosticsConfig.json')
 
 resource acr 'Microsoft.ContainerRegistry/registries@2021-06-01-preview' existing = {
   name: acrInfo.name
@@ -89,6 +85,7 @@ resource managedIdentity 'Microsoft.ManagedIdentity/userAssignedIdentities@2022-
   scope: resourceGroup(miInfo.group)
 }
 
+var enableRedis = true
 
 @description('redis cache used by the AzFinSim application')
 resource redisCache 'Microsoft.Cache/redis@2022-06-01' = if (enableRedis) {
@@ -106,9 +103,17 @@ resource redisCache 'Microsoft.Cache/redis@2022-06-01' = if (enableRedis) {
 }
 
 resource redisCache_diagnosticsSettings 'Microsoft.Insights/diagnosticSettings@2021-05-01-preview' = if (enableDiagnostics && enableRedis) {
-  name: 'redis-la'
   scope: redisCache
-  properties: union({ workspaceId: logAnalyticsWorkspaceId }, diagnosticsSettings)
+  name: 'redis-la'
+  properties: {
+    workspaceId: logAnalyticsWorkspaceId
+    logs: [
+      {
+        categoryGroup: 'allLogs'
+        enabled: true
+      }
+    ]
+  }
 }
 
 var envVars = {
