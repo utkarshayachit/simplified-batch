@@ -358,3 +358,6 @@ output containerRegistryName string = dplResources.outputs.acr.name
 
 @description('trame website URL')
 output trameURL string = enableTrame ? dplTrameWebsite.outputs.websiteURL : ''
+
+@description('datasets storage account')
+output datasetsSAName string = enableTrame ? dplTrame.outputs.saInfo.name : ''

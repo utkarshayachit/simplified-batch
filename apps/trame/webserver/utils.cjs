@@ -100,12 +100,10 @@ async function submitJob(dataset, container, batchEndpoint, containerRegistryLog
         userIdentity: GLOBALS.TASK_USER_IDENTITY,
         containerSettings: {
             containerRunOptions: `-p ${port}:8080`,
-            imageName: `${containerRegistryLoginServer}/trame/trame-paraview:latest`,
+            imageName: `${containerRegistryLoginServer}/vizer/vizer:latest`,
         },
-        commandLine: '/bin/sh -c "/opt/paraview/bin/pvpython ' +
-          '/opt/data_viewer/app.py --server --venv /opt/trame/env -i 0.0.0.0 -p 8080 ' +
-          '--create-on-server-ready $AZ_BATCH_TASK_WORKING_DIR/server-ready.txt ' +
-          `--dataset $AZ_BATCH_NODE_MOUNTS_DIR/${container}/${dataset}"`
+       commandLine: '--create-on-server-ready {AZ_BATCH_TASK_WORKING_DIR}/server-ready.txt ' +
+          `--dataset {AZ_BATCH_NODE_MOUNTS_DIR}/${container}/${dataset}`
     }
 
     // add task to the job

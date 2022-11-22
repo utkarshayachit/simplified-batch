@@ -57,14 +57,15 @@ var envVars = {
 
   NUMBER_OF_IMAGES: '2'
 
-  SOURCE_LOCATION_1: 'https://github.com/utkarshayachit/simplified-batch#${branchName}'
-  IMAGE_TAG_1: 'trame/trame-paraview:latest'
-  DOCKER_FILE_1: 'apps/trame/Dockerfile.trame'
+  SOURCE_LOCATION_1: 'https://github.com/utkarshayachit/vizer#main'
+  IMAGE_TAG_1: 'vizer/vizer:latest'
+  DOCKER_FILE_1: 'Dockerfile'
 
   SOURCE_LOCATION_2: 'https://github.com/utkarshayachit/simplified-batch#${branchName}'
   IMAGE_TAG_2: 'trame/webserver:latest'
   DOCKER_FILE_2: 'apps/trame/Dockerfile.webserver'
 }
+
 
 @description('deployment script to build and push container images')
 resource buildnpushContainerImage 'Microsoft.Resources/deploymentScripts@2020-10-01' = {

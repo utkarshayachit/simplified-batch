@@ -60,6 +60,9 @@ datasets interactively from the browser itself.
 
 ![trame demo](images/trame.gif)
 
+This demo uses the ParaView/trame-based visualization application available [here](https://github.com/utkarshayachit/vizer).
+
+
 ## Deployment
 
 Before you can try any of the demos, you first need to deploy the infrastructure on Azure.
@@ -169,12 +172,13 @@ Succeeded
 
 # if deployment succeeded, use this to get some deployment outputs.
 az deployment sub show --name $AZ_DEPLOYMENT_NAME        \
-   --query '{AZ_BATCH_ENDPOINT: properties.outputs.batchAccountEndpoint.value, AZ_ACR_NAME: properties.outputs.containerRegistryName.value, TRAME_WEBSITE_URL: properties.outputs.trameURL.value}'
+   --query '{AZ_BATCH_ENDPOINT: properties.outputs.batchAccountEndpoint.value, AZ_ACR_NAME: properties.outputs.containerRegistryName.value, TRAME_WEBSITE_URL: properties.outputs.trameURL.value, DATASETS_STORAGE_NAME: properties.outputs.datasetsSAName.value}'
 # this will generate output of the form:
 {
   "AZ_BATCH_ENDPOINT": "<url>",
   "AZ_ACR_NAME": "<name>",
-  "TRAME_WEBSITE_URL": "<url>"
+  "TRAME_WEBSITE_URL": "<url>",
+  "DATASETS_STORAGE_NAME": "<name>"
 }
 ```
 
@@ -358,6 +362,66 @@ monitor jobs and tasks in near future.
 ## Demo: LULESH-Catalyst
 
 [todo] notes about this demo
+
+## Demo: trame
+
+The `trame` demo is a web-application for interactive visualization. Before we go
+the web app, we have to do two things: upload datasets to visualize and resize the
+pool.
+
+### Prep: upload datasets
+
+First, locate the name of the storage account that was deployed on which the web-app is designed to browse
+datasets. The name is output as the value for '`DATASETS_STORAGE` during deployment. You can also find it
+by simply browsing to the resource group named `rg-${environment}-${prefix}-trame`. It's the storage account named
+`sa....` under this group.
+
+By default, the deployment is setup in a rather locked-down configuration following good security practices. So you won't
+be able to copy dataset files from your local machine directly. You'll need to update firewall exceptions to allow it. Navigate
+to the **Networking** page on the storage account in the portal. There, under **Firewall**, you should see a checkbox for
+*Add your client IP address ('......')*. Check that and hit **Save**. After a few minutes to update the configurations, you should
+be able to browse to **Containers > datasets** and then upload datasets to the storage account. You an also use standard Azure tools
+like `azcopy` or `Storage Explorer` to transfer datasets at this stage.
+
+### Prep: resize pool
+
+You can resize the pool as follows:
+
+```sh
+# these variables must be set to the values obtained on a
+# successful deployment (see `az deployment sub show ....`)
+AZ_BATCH_ENDPOINT=<...>
+
+# get pool information
+python3 -m batch_controller.trame pool -e $AZ_BATCH_ENDPOINT --info
+# output:
+=============================================
+trame-pool (display name: '<n/a>')
+=============================================
+State: active (allocation state: steady)
+Current Dedicated Size: 0
+Current Spot Size: 0
+
+# by default, pool is set to size 0, you can resize it using
+# `--resize` as follows:
+python3 -m batch_controller.trame pool -e $AZ_BATCH_ENDPOINT --resize 1
+
+# Resize continues in the background and can take a while.
+# You can check resize status using the same `--info` command as earlier.
+# Once the 'Current Dedicated Size' is 1 and allocation state changes to 'steady'
+# the resize complete.
+```
+
+Alternatively, you can also use Azure Portal or Azure Batch Explorer to resize the pool named `trame-pool`
+on the batch account deployed.
+
+### Using Web Application
+
+Once the pool resize has completed, open your web browser and navigate to the `TRAME_WEBSITE_URL` which was printed out
+during deployment. Alternatively, you can browse to the resource group named `rg-${environment}-${prefix}-trame` and then
+click on the **App Service** resource, and navigate to the **URL** displayed on the **Overview** page. That will take you
+to the demo web-app as shown in the video earlier on this page.
+
 
 ## Architecture Overview
 
