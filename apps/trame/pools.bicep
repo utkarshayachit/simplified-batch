@@ -76,7 +76,7 @@ resource pool 'Microsoft.Batch/batchAccounts/pools@2022-06-01' = {
     vmSize: batchNodeSku
     taskSlotsPerNode: taskSlotsPerNode[batchNodeSku]
     taskSchedulingPolicy: {
-      nodeFillType: 'Pack' // or 'Spread'
+      nodeFillType:  'Spread' // or 'Pack'
     }
     deploymentConfiguration: {
       virtualMachineConfiguration: {
