@@ -288,14 +288,14 @@ module dplTrameWebsite 'apps/trame/websites.bicep' = if (enableTrame) {
       name: dplResources.outputs.batchManagedIdentity.name
       group: mainRG.name
     }
-    saInfo: dplTrame.outputs.saInfo
+    saInfo: enableTrame? dplTrame.outputs.saInfo : {}
     acrInfo: {
       name: dplResources.outputs.acr.name
       group: mainRG.name
     }
     poolSubnetId: enableHubAndSpoke? dplHubSpoke.outputs.vnetSpokeOne.snetPool.id : dplSpoke.outputs.vnet.snetPool.id
     appServiceSubnetId: enableHubAndSpoke? dplHubSpoke.outputs.vnetSpokeOne.snetWebServerfarms.id : dplSpoke.outputs.vnet.snetWebServerfarms.id
-    containerImages: dplTrame.outputs.containerImages
+    containerImages: enableTrame? dplTrame.outputs.containerImages : {}
   }
   dependsOn: [
     dplEndpoints
