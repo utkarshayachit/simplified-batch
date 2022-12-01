@@ -66,6 +66,6 @@ def submit_job(endpoint, pool_id, num_tasks, task_command_lines, task_container_
 
     return {
         'job_id': job_id,
-        'task_ids': ['task_{}'.format(index) for index in range(len(task_command_lines))],
+        'task_ids': ['task_{}'.format(index) for index in range(num_tasks)],
         'pool_id': pool_id,
     }
