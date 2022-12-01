@@ -37,13 +37,13 @@ param enableHubAndSpoke bool = false
 param enableVPNGateway bool = false
 
 @description('enable AzFinSim demo')
-param enableAzFinSim bool = true
+param enableAzFinSim bool = false
 
 @description('enable LULESH-Catalyst demo')
-param enableLuleshCatalyst bool = true
+param enableLuleshCatalyst bool = false
 
 @description('enable trame demo')
-param enableTrame bool = true
+param enableTrame bool = false
 
 @description('repository branch name')
 param branchName string = 'main'

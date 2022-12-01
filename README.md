@@ -158,15 +158,19 @@ AZ_BATCH_SERVICE_OBJECT_ID=<....>
 AZ_PREFIX=<your initials><MMDDYY><suffix>
 
 # create deployment
-az deployment sub create --location $AZ_LOCATION            \
-         --name $AZ_DEPLOYMENT_NAME                         \
-         --template-file infrastructure.bicep               \
-         --query properties.provisioningState               \
-         --output tsv                                       \
-         --parameters                                       \
-            prefix=$AZ_PREFIX                               \
-            deployer=$AZ_DEPLOYER                           \
-            batchServiceObjectId=$AZ_BATCH_SERVICE_OBJECT_ID
+az deployment sub create --location $AZ_LOCATION             \
+         --name $AZ_DEPLOYMENT_NAME                          \
+         --template-file infrastructure.bicep                \
+         --query properties.provisioningState                \
+         --output tsv                                        \
+         --parameters                                        \
+            prefix=$AZ_PREFIX                                \
+            deployer=$AZ_DEPLOYER                            \
+            batchServiceObjectId=$AZ_BATCH_SERVICE_OBJECT_ID \
+            enableAzFinSim=true                              \
+            enableLuleshCatalyst=true                        \
+            enableTrame=true
+
 # on success, this print
 Succeeded
 
@@ -186,6 +190,11 @@ This will trigger the deployment in a default configuration. Supported parameter
 and their details are given in the following section. The output text shows three values:
 URL for the batch service, the name of the container registry, and, if `trame` application
 was enabled, then the URL for the trame website. Store these values so you can use them when executing the demo apps.
+
+**NOTE:** Feel free to change the enableAzFinSim, enableLuleshCatalyst, or
+enableTrame parameters to `false` (or simply remove them) if you want to test out
+only one specific application. All applications are independent of one another and
+can be deployed by themselves.
 
 ### Parameters
 
@@ -231,15 +240,15 @@ Here are the optional parameters:
   this is only used when **enableHubAndSpoke** is `true`; when set to true a VPN gateway
   is deployed in the hub to allow clients VPN into the network.
 
-* **enableAzFinSim** *(bool, **default-value**: `true`)*:
+* **enableAzFinSim** *(bool, **default-value**: `false`)*:
   when set to true, enables the AzFinSim application demo and deploys extra resources needed
   for the demo.
 
-* **enableLuleshCatalyst** *(bool, **default-value**: `true`)*:
+* **enableLuleshCatalyst** *(bool, **default-value**: `false`)*:
   when set to true, enables the LULESH-Catalyst application demo and deploys extra resources needed
   for the demo.
 
-* **enableTrame** *(bool, **default-value**: `true`)*:
+* **enableTrame** *(bool, **default-value**: `false`)*:
   when set to true, enables the trame application demo and deploys extra resources needed
   for the demo.
 
