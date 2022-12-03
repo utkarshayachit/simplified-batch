@@ -117,6 +117,12 @@ This section takes you through the steps involved in making a deployment.
    may have to delete old batch account, or deploy to a different region, or have the
    limit increased by contacting your administrator.
 
+5. **Validate compute quotas**: Ensure that the region you will deploy under has not
+   sufficient quota left for the SKUs picked for batch compute nodes. The AzFinSim
+   and LULESH-Catalyst demos use `Standard_D2S_V3` while the trame demo uses
+   `Standard_DS5_V2` by default. You can change these by modifying the `pools.bicep`
+   files for each of the demos under `apps/` directory.
+
 ### Using Azure CLI
 
 There are multiple ways of deploying any infrastructure in Azure. Here, we use
