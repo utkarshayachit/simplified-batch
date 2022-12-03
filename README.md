@@ -446,6 +446,35 @@ to the demo web-app as shown in the video earlier on this page.
 
 * [ ] spot-vm reclaming and checkpointing
 
+## Cleanup
+
+To cleanup and delete all resources, we simply delete all the resource
+groups that were deployed during the deployment. You can use the Azure Portal for it. Simply search for all resource groups under your subscription with the name `rg-{environment}-{prefix}` where environment and prefix match the parameter values used when creating the deployment. Once you have located the resource groups, you can delete them one at a time. Alternatively, you can use the following Azure CLI command to search and delete the resource groups.
+
+```sh
+# list all resource groups matching the criteria
+az group list --query "[?contains(name,'dev-uda1121a')].name" -o tsv
+
+# output will be of the form
+# rg-dev-uda1121a-trame
+# rg-dev-uda1121a-network
+# rg-dev-uda1121a
+# rg-dev-uda1121a-diagnostics
+...
+# confirm that there are no resources groups listed that you do no
+# want to delete.
+
+# delete all resource groups matching the query
+az group list --query "[?contains(name,'dev-uda1121a')].name" -o tsv | \
+  xargs -l az group delete -y --no-wait -g
+
+# if using Windows terminal without `xargs` support, you can delete
+# the group individually by using command of the following form
+# replacing `<resource-group-name>` with name for the resource group to delete
+# listed earlier one at a time.
+az group delete <resource-group-name>
+```
+
 ## Acknowledgements
 
 * The deployment architecture is based on [AzureBatch-Secured](https://github.com/mocelj/AzureBatch-Secured).
