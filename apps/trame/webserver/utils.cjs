@@ -124,7 +124,7 @@ async function submitJob(dataset, container, batchEndpoint, containerRegistryLog
 }
 
 async function trameServerReady(batchServiceClient, jobId, taskId, timeout) {
-    const expiration = dayjs().add(timeout || 1, 'minute')
+    const expiration = dayjs().add(timeout || 10, 'minute')
     while (dayjs() < expiration) {
         let files = await batchServiceClient.file.listFromTask(jobId, taskId, {
             recursive: true,
@@ -136,6 +136,7 @@ async function trameServerReady(batchServiceClient, jobId, taskId, timeout) {
             console.log('server is ready!')
             return true;
         }
+        await new Promise(r => setTimeout(r, 5000)); // sleep for 5 seconds
     }
     throw Error('trame server ready timedout')
 }

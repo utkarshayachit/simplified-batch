@@ -20,8 +20,11 @@ param saInfo object = {
   'Standard_F4s_v2'
   'Standard_F8s_v2'
   'Standard_DS5_v2'
+  'Standard_D32s_v3'
+  'Standard_E32s_v3'
+  'Standard_E32s_v5'
 ]) 
-param batchNodeSku  string = 'Standard_DS5_v2'
+param batchNodeSku  string = 'Standard_D32s_v3'
 
 param containerImageNames array
 
@@ -41,6 +44,9 @@ var taskSlotsPerNode = {
   Standard_F4s_v2: 4
   Standard_F8s_v2: 8
   Standard_DS5_v2: 8 // has 16 vCPUs
+  Standard_D32s_v3: 16 // has 32 vCPUs
+  Standard_E32s_v3: 32
+  Standard_E32s_v5: 32
 }
 
 resource batchAccount 'Microsoft.Batch/batchAccounts@2022-06-01' existing = {
