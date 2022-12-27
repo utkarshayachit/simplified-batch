@@ -96,16 +96,16 @@ resource sa 'Microsoft.Storage/storageAccounts@2022-05-01' = {
   name: take('sa1${join(split(guid('sa', rsPrefix, resourceGroup().id), '-'), '')}', 24)
   location: location
   sku: {
-    name:  'Premium_LRS'
+    name: 'Standard_LRS'
   }
-  kind: 'BlockBlobStorage'
+  kind: 'StorageV2'
   properties: {
-    minimumTlsVersion: 'TLS1_2'
     supportsHttpsTrafficOnly: false
-    accessTier: 'Premium'
+    accessTier: 'Hot'
     publicNetworkAccess: 'Enabled'
-    allowBlobPublicAccess: false
+    allowBlobPublicAccess: true
     allowSharedKeyAccess: true
+    minimumTlsVersion: 'TLS1_2'
     isNfsV3Enabled: true
     isHnsEnabled: true
     networkAcls: {
@@ -123,7 +123,7 @@ resource saContainer 'Microsoft.Storage/storageAccounts/blobServices/containers@
   name: 'datasets'
   parent: sa::blobServices
   properties: {
-    publicAccess: 'None'
+    publicAccess: 'Container'
   }
 }
 
