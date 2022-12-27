@@ -104,7 +104,7 @@ resource sa 'Microsoft.Storage/storageAccounts@2022-05-01' = {
     supportsHttpsTrafficOnly: false
     accessTier: 'Premium'
     publicNetworkAccess: 'Enabled'
-    allowBlobPublicAccess: false
+    allowBlobPublicAccess: true
     allowSharedKeyAccess: true
     isNfsV3Enabled: true
     isHnsEnabled: true
@@ -123,7 +123,7 @@ resource saContainer 'Microsoft.Storage/storageAccounts/blobServices/containers@
   name: 'datasets'
   parent: sa::blobServices
   properties: {
-    publicAccess: 'None'
+    publicAccess: 'Container'
   }
 }
 
