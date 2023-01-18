@@ -129,8 +129,8 @@ export default {
                     <v-icon @click='close'>mdi-close-box</v-icon>
             </v-system-bar>
 
-            <v-card-text class="fill-height">
-                    <iframe :src="url" width="100%" height="90%"></iframe>
+            <v-card-text class="fill-height pa-0">
+                    <iframe :src="url" width="100%" height="100%"></iframe>
             </v-card-text>
             </v-card>
         </v-container>
