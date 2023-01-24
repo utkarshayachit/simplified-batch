@@ -67,7 +67,8 @@ resource keyVault 'Microsoft.KeyVault/vaults@2022-07-01' = {
     enabledForTemplateDeployment: true
     enabledForDiskEncryption: true
     enableRbacAuthorization: false /*see note above */
-    enableSoftDelete: false         // in production, one may want to enable soft-delete.
+    enableSoftDelete: true
+    enablePurgeProtection: true
     publicNetworkAccess: 'disabled'
     tenantId: tenant().tenantId
     sku: {
