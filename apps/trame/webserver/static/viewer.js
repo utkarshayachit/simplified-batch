@@ -5,8 +5,8 @@ export default {
     },
 
     props: {
-        dataset: String,
-        container: String,
+        datasets: Array(),
+        options: Object(),
     },
 
     emits: [
@@ -45,8 +45,8 @@ export default {
                         'Content-Type': 'application/json;charset=utf-8'
                     },
                     body: JSON.stringify({
-                        dataset: this.dataset,
-                        container: this.container,
+                        datasets: this.datasets,
+                        options: this.options,
                     }),
                     signal: this.abortController.signal,
                 })

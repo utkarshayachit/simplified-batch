@@ -5,27 +5,28 @@ export default {
     columns: Array,
     loadingText: String,
   },
+
+  data: () => ({
+    selected: [],
+  }),
+
   methods: {
-    visualize(item) {
-      console.log("visualize", item.name, item.container)
-      this.$emit('view', item.name, item.container)
-    },
+    on_select() {
+      this.$emit('selection_changed', this.selected)
+    }
   },
+
   template: `
     <v-data-table disable-filtering disable-pagination hide-default-footer
       loading=true
       loading-text="no datasets present"
+      v-model="selected"
       :headers="columns"
-      :items="data">
-      <template v-slot:item.actions="{ item }">
-        <v-icon
-          small
-          class="mr-2"
-          @click="visualize(item)"
-        >
-          mdi-cube-scan
-        </v-icon>
-      </template>
+      :items="data"
+      item-key="name"
+      show-select
+      @input="on_select"
+      >
     </v-data-table>
   `
 }

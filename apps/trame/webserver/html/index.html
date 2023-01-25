@@ -31,12 +31,12 @@
           @connect="fetch_datasets">
         </home>
         <storage-viewer v-else-if="page.current==='storageViewer'"
-          @clicked="visualize"
+          @visualize="visualize"
           @failed="(msg) => on_error('Error: Storage Access', msg, 'home')">
         </storage-viewer>
         <viewer v-else-if="page.current==='viewer'"
-          :dataset="dataset"
-          :container="container"
+          :datasets="datasets"
+          :options="options"
           @done="go_to('storageViewer')"
           @failed="(msg) => on_error('Error: Visualize', msg, 'storageViewer')">
         </viewer>
@@ -72,10 +72,10 @@
           this.page.current = 'storageViewer'
         },
 
-        visualize(datasetName, containerName) {
-          this.dataset = datasetName;
-          this.container = containerName;
-          this.page.current = 'viewer';
+        visualize(datasets, options) {
+          this.datasets = datasets
+          this.options = options
+          this.page.current = 'viewer'
         },
 
         go_to(page) {
@@ -101,8 +101,8 @@
           title: undefined,
           message: undefined,
         },
-        dataset: '',
-        container: '',
+        datasets: [],
+        options: {}
       })
     });
   </script>

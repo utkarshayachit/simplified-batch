@@ -42,7 +42,7 @@ app.get('/datasets', async (req, res, next) => {
 /// start a new job
 app.post('/job', async (req, res, next) => {
     try {
-        let job = await utils.submitJob(req.body.dataset, req.body.container,
+        let job = await utils.submitJob(req.body.datasets, req.body.options,
             opts.batchEndpoint, opts.containerRegistry)
         res.json({ success: true, job: job })
     } catch (error) {

@@ -81,14 +81,32 @@ function pickPort() {
     throw Error('failed to find free port!')
 }
 
-async function submitJob(dataset, container, batchEndpoint, containerRegistryLoginServer, prefix) {
+async function submitJob(datasets, options, batchEndpoint, containerRegistryLoginServer, prefix) {
     let batchServiceClient = new BatchServiceClient(await getBatchCredentials(),
         batchEndpoint)
 
+    let label = `trame (${datasets[0].name}:${datasets[0].container}) (count=${datasets.length})`
     const jobConfig = {
         id: `${prefix||'trame'}-${getUniqueId()}`,
-        displayName: `trame (${dataset}:${container})`,
+        displayName: label,
         poolInfo: GLOBALS.TRAME_POOL_INFO,
+    }
+
+    let commandLine = ['--create-on-server-ready',
+        '{AZ_BATCH_TASK_WORKING_DIR}/server-ready.txt']
+
+    for (let dataset of datasets) {
+        commandLine.push('--dataset')
+        commandLine.push(`{AZ_BATCH_NODE_MOUNTS_DIR}/${dataset.container}/${dataset.name}`)
+    }
+
+    if (options.use_cropping) {
+        commandLine.push('--force-view')
+        commandLine.push('crop')
+    }
+
+    if (options.link_interactions) {
+        commandLine.push('--link-views')
     }
 
     const port = pickPort();
@@ -96,14 +114,13 @@ async function submitJob(dataset, container, batchEndpoint, containerRegistryLog
 
     const taskConfig = {
         id: 'task-0',
-        displayName: `trame (${dataset}:${container}) on ${port}`,
+        displayName: `${label} on ${port}`,
         userIdentity: GLOBALS.TASK_USER_IDENTITY,
         containerSettings: {
             containerRunOptions: `-p ${port}:8080`,
             imageName: `${containerRegistryLoginServer}/vizer/vizer:latest`,
         },
-       commandLine: '--create-on-server-ready {AZ_BATCH_TASK_WORKING_DIR}/server-ready.txt ' +
-          `--dataset {AZ_BATCH_NODE_MOUNTS_DIR}/${container}/${dataset}`
+       commandLine: commandLine.join(' ')
     }
 
     // add task to the job
