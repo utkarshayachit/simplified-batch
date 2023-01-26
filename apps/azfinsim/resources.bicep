@@ -70,7 +70,6 @@ param logAnalyticsWorkspaceId string = ''
 var rsPrefix = '${environment}-${prefix}-azfinsim'
 var dplPrefix = 'dpl-${environment}-${prefix}-azfinsim'
 var enableDiagnostics = logAnalyticsWorkspaceId != ''
-var deploySecured = (environment != 'dev')
 
 resource acr 'Microsoft.ContainerRegistry/registries@2021-06-01-preview' existing = {
   name: acrInfo.name
@@ -101,7 +100,8 @@ resource redisCache 'Microsoft.Cache/redis@2022-06-01' = if (enableRedis) {
       family: 'C'
       name: 'Basic'
     }
-    publicNetworkAccess: deploySecured ? 'Disabled' : 'Enabled'
+    publicNetworkAccess: 'Disabled'
+    minimumTlsVersion: '1.2'
   }
 }
 
