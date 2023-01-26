@@ -110,14 +110,20 @@ This section takes you through the steps involved in making a deployment.
    ```sh
    az provider register -n Microsoft.Batch --subscription <your subscription name> --wait
    ```
+   
+4. Ensure Batch service has authorization to access your subscription. Using the portal,
+   access your Subscription and select the **Access Control (IAM)** pge. Under there, we need to assign
+  **Contributor** or **Owner** role to the Batch API. You can find this account by searching for
+  **Microsoft Azure Batch** (application ID should be **ddbf3205-c6bd-46ae-8127-60eb93363864**). For additional
+  details, see [this](https://learn.microsoft.com/en-us/azure/batch/batch-account-create-portal#allow-azure-batch-to-access-the-subscription-one-time-operation).
 
-4. **Validate Batch account quotas**: Ensure that the region you will deploy under has
+5. **Validate Batch account quotas**: Ensure that the region you will deploy under has
    not reached its batch service quota limit. Your subscription may have limits on
    how many batch accounts can be created in a region. If you hit this limit, you
    may have to delete old batch account, or deploy to a different region, or have the
    limit increased by contacting your administrator.
 
-5. **Validate compute quotas**: Ensure that the region you will deploy under has not
+6. **Validate compute quotas**: Ensure that the region you will deploy under has not
    sufficient quota left for the SKUs picked for batch compute nodes. The AzFinSim
    and LULESH-Catalyst demos use `Standard_D2S_V3` while the trame demo uses
    `Standard_DS5_V2` by default. You can change these by modifying the `pools.bicep`
