@@ -111,7 +111,7 @@ This section takes you through the steps involved in making a deployment.
    az provider register -n Microsoft.Batch --subscription <your subscription name> --wait
    ```
    
-4. Ensure Batch service has authorization to access your subscription. Using the portal,
+4. **Ensure Batch service has authorization to access your subscription**. Using the portal,
    access your Subscription and select the **Access Control (IAM)** pge. Under there, we need to assign
   **Contributor** or **Owner** role to the Batch API. You can find this account by searching for
   **Microsoft Azure Batch** (application ID should be **ddbf3205-c6bd-46ae-8127-60eb93363864**). For additional
