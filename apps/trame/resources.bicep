@@ -59,7 +59,7 @@ var envVars = {
 
   SOURCE_LOCATION_1: 'https://github.com/utkarshayachit/vizer#main'
   IMAGE_TAG_1: 'vizer/vizer:latest'
-  DOCKER_FILE_1: 'Dockerfile'
+  DOCKER_FILE_1: 'Dockerfile.osmesa'
 
   SOURCE_LOCATION_2: 'https://github.com/utkarshayachit/simplified-batch#${branchName}'
   IMAGE_TAG_2: 'trame/webserver:latest'
@@ -161,4 +161,3 @@ output endpoints array = [
     privateDnsZoneName: 'privatelink.blob.${az.environment().suffixes.storage}'
   }
 ]
-
