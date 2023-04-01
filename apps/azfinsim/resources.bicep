@@ -180,7 +180,7 @@ module dplPools 'pools.bicep' = {
 var batchSecrets = {
   'azfinsim-appinsights-id': empty(appInsightsInfo) ? '' : appInsights.properties.ApplicationId
   'azfinsim-appinsights-key': empty(appInsightsInfo) ? '' : appInsights.properties.InstrumentationKey
-  'azfinsim-appinsights-connection-string': empty(appInsightsInfo) ? '' : appInsights.properties.ConnectionString
+  'azfinsim-app-insights': empty(appInsightsInfo) ? '' : appInsights.properties.ConnectionString
   'azfinsim-cache-key': enableRedis ? redisCache.listKeys().primaryKey : ''
   'azfinsim-cache-name': enableRedis ? redisCache.properties.hostName : ''
   // 'azfinsim-cache-port': enableRedis ? redisCache.properties.port : '' // non SSL-port
