@@ -126,7 +126,7 @@ var envVars = {
 
   NUMBER_OF_IMAGES: '2'
 
-  SOURCE_LOCATION_1: 'https://github.com/utkarshayachit/azfinsim#refactor'
+  SOURCE_LOCATION_1: 'https://github.com/utkarshayachit/azfinsim#main'
   IMAGE_TAG_1: 'azfinsim/azfinsim:latest'
   DOCKER_FILE_1: 'Dockerfile'
 
@@ -178,8 +178,9 @@ module dplPools 'pools.bicep' = {
 
 @description('application-specific secrets that will be stored in the KeyVault')
 var batchSecrets = {
-  'azfinsim-appinsights-id': !empty(appInsightsInfo) ? '' : appInsights.properties.ApplicationId
-  'azfinsim-appinsights-key': !empty(appInsightsInfo) ? '' : appInsights.properties.InstrumentationKey
+  'azfinsim-appinsights-id': empty(appInsightsInfo) ? '' : appInsights.properties.ApplicationId
+  'azfinsim-appinsights-key': empty(appInsightsInfo) ? '' : appInsights.properties.InstrumentationKey
+  'azfinsim-appinsights-connection-string': empty(appInsightsInfo) ? '' : appInsights.properties.ConnectionString
   'azfinsim-cache-key': enableRedis ? redisCache.listKeys().primaryKey : ''
   'azfinsim-cache-name': enableRedis ? redisCache.properties.hostName : ''
   // 'azfinsim-cache-port': enableRedis ? redisCache.properties.port : '' // non SSL-port

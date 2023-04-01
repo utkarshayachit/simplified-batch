@@ -49,7 +49,7 @@ resource acr 'Microsoft.ContainerRegistry/registries@2021-06-01-preview' existin
   scope: resourceGroup(acrInfo.group)
 }
 
-resource pool 'Microsoft.Batch/batchAccounts/pools@2022-06-01' = {
+resource pool 'Microsoft.Batch/batchAccounts/pools@2022-10-01' = {
   name: 'lulesh-catalyst-pool'
   parent: batchAccount
   identity: {
@@ -64,6 +64,7 @@ resource pool 'Microsoft.Batch/batchAccounts/pools@2022-06-01' = {
     taskSchedulingPolicy: {
       nodeFillType: 'Pack' // or 'Spread'
     }
+    targetNodeCommunicationMode: 'Simplified'
     deploymentConfiguration: {
       virtualMachineConfiguration: {
         imageReference: {

@@ -59,7 +59,7 @@ resource keyVault 'Microsoft.KeyVault/vaults@2022-07-01' existing = {
   scope: resourceGroup(keyVaultInfo.group)
 }
 
-resource pool 'Microsoft.Batch/batchAccounts/pools@2022-06-01' = {
+resource pool 'Microsoft.Batch/batchAccounts/pools@2022-10-01' = {
   name: 'azfinsim-pool'
   parent: batchAccount
   identity: {
@@ -71,6 +71,7 @@ resource pool 'Microsoft.Batch/batchAccounts/pools@2022-06-01' = {
   properties: {
     vmSize: batchNodeSku
     taskSlotsPerNode: taskSlotsPerNode[batchNodeSku]
+    targetNodeCommunicationMode: 'Simplified'
     taskSchedulingPolicy: {
       nodeFillType: 'Pack' // or 'Spread'
     }

@@ -69,7 +69,7 @@ resource sa 'Microsoft.Storage/storageAccounts@2022-05-01' existing = {
   scope: resourceGroup(saInfo.group)
 }
 
-resource pool 'Microsoft.Batch/batchAccounts/pools@2022-06-01' = {
+resource pool 'Microsoft.Batch/batchAccounts/pools@2022-10-01' = {
   name: 'trame-pool'
   parent: batchAccount
   identity: {
@@ -84,6 +84,7 @@ resource pool 'Microsoft.Batch/batchAccounts/pools@2022-06-01' = {
     taskSchedulingPolicy: {
       nodeFillType:  'Spread' // or 'Pack'
     }
+    targetNodeCommunicationMode: 'Simplified'
     deploymentConfiguration: {
       virtualMachineConfiguration: {
         imageReference: {
