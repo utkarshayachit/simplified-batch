@@ -72,6 +72,9 @@ var dplPrefix = 'dpl-${environment}-${prefix}-azfinsim'
 var enableDiagnostics = logAnalyticsWorkspaceId != ''
 var deploySecured = (environment != 'dev')
 
+@description('bultin roles')
+var builtinRoles = loadJsonContent('../../modules/builtinRoles.json')
+
 resource acr 'Microsoft.ContainerRegistry/registries@2021-06-01-preview' existing = {
   name: acrInfo.name
   scope: resourceGroup(acrInfo.group)
@@ -116,6 +119,53 @@ resource redisCache_diagnosticsSettings 'Microsoft.Insights/diagnosticSettings@2
         enabled: true
       }
     ]
+  }
+}
+
+@description('storage account for data files')
+resource sa 'Microsoft.Storage/storageAccounts@2022-05-01' = {
+  name: take('sa1${join(split(guid('sa', rsPrefix, resourceGroup().id), '-'), '')}', 24)
+  location: location
+  sku: {
+    name:  'Standard_LRS'
+  }
+  kind: 'StorageV2'
+  properties: {
+    minimumTlsVersion: 'TLS1_2'
+    supportsHttpsTrafficOnly: false
+    accessTier: 'Hot'
+    publicNetworkAccess: 'Enabled'
+    allowBlobPublicAccess: true
+    allowSharedKeyAccess: true
+    isNfsV3Enabled: true
+    isHnsEnabled: true
+    networkAcls: {
+      defaultAction: 'Deny' // required for NFS enabled
+      bypass: 'AzureServices'
+    }
+  }
+
+  resource blobServices 'blobServices' existing = {
+    name: 'default'
+  }
+}
+
+resource saContainer 'Microsoft.Storage/storageAccounts/blobServices/containers@2022-05-01' = {
+  name: 'trades'
+  parent: sa::blobServices
+  properties: {
+    publicAccess: 'Container'
+  }
+}
+
+@description('role assignment for datasets storage account')
+resource roleAssignmentSA 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+  name: guid(managedIdentity.id, sa.id, 'StorageBlobDataContributor')
+  scope: sa
+  properties: {
+    principalId: managedIdentity.properties.principalId
+    principalType: 'ServicePrincipal'
+    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', builtinRoles.StorageBlobDataContributor)
   }
 }
 
@@ -173,6 +223,11 @@ module dplPools 'pools.bicep' = {
         '${acr.properties.loginServer}/${envVars.IMAGE_TAG_2}'
       ]
       subnetId: poolSubnetId
+      saInfo: {
+        name: sa.name
+        group: resourceGroup().name
+        container: saContainer.name
+      }
   }
 }
 
@@ -197,7 +252,7 @@ module dplSaveSecrets '../../modules/helpers/saveSecrets.bicep' = {
   }
 }
 
-var endpoints = enableRedis ? [
+var endpoints = union(enableRedis ? [
   // Redis Cache
   {
     name: redisCache.name
@@ -206,7 +261,16 @@ var endpoints = enableRedis ? [
     groupIds: ['redisCache']
     privateDnsZoneName: 'privatelink.redis.cache.windows.net'
   }
-] : []
+] : [], [
+  // Storage Account
+  {
+    name: sa.name
+    group: resourceGroup().name
+    privateLinkServiceId: sa.id
+    groupIds: ['blob']
+    privateDnsZoneName: 'privatelink.blob.${az.environment().suffixes.storage}'
+  }
+])
 
 @description('private endpoints')
 output endpoints array = endpoints

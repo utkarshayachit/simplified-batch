@@ -30,6 +30,15 @@ param acrInfo object = {
 @description('pool subnet id')
 param subnetId string
 
+@description('block storage account info where all datasets are stored')
+param saInfo object = {
+  group: null
+  name: null
+  container: null
+}
+
+
+
 var taskSlotsPerNode = {
   Standard_D2s_V3: 2
   Standard_D2s_V4: 2
@@ -57,6 +66,12 @@ resource acr 'Microsoft.ContainerRegistry/registries@2021-06-01-preview' existin
 resource keyVault 'Microsoft.KeyVault/vaults@2022-07-01' existing = {
   name: keyVaultInfo.name
   scope: resourceGroup(keyVaultInfo.group)
+}
+
+
+resource sa 'Microsoft.Storage/storageAccounts@2022-05-01' existing = {
+  name: saInfo.name
+  scope: resourceGroup(saInfo.group)
 }
 
 resource pool 'Microsoft.Batch/batchAccounts/pools@2022-10-01' = {
@@ -129,5 +144,16 @@ resource pool 'Microsoft.Batch/batchAccounts/pools@2022-10-01' = {
         }
       }
     }
+
+    mountConfiguration: [
+      {
+        nfsMountConfiguration: {
+          relativeMountPath: '${saInfo.container}'
+          source: '${sa.name}.blob.${az.environment().suffixes.storage}:/${sa.name}/${saInfo.container}'
+          mountOptions: '-o sec=sys,vers=3,nolock,proto=tcp'
+          // ref: https://learn.microsoft.com/en-us/azure/storage/blobs/network-file-system-protocol-support-how-to
+        }
+      }
+    ]
   }
 }
