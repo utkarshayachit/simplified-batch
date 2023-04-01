@@ -280,27 +280,9 @@ applications that use this infrastructure to perform the computation and generat
 results. In this project, we use simple Python-based applications that
 demonstrate this.
 
-To run these applications, you need Python (3.8 or newer) installed on your workstation.
-Alternatively, if you have Docker capable workstation, you can build and use the containerized
-version of these applications.
-
-#### Option 1: Using Docker
-
-```sh
-# ensure we're in the simplified-batch checkout, if not `cd` to it.
-cd .../simplified-batch
-
-# build the container image named 'batch-apps'
-docker build -t batch-apps:latest -f Dockerfile.apps .
-
-# test the container
-docker run -it batch-apps:latest -m batch_controller.azfinsim --help
-# this should generate the following output
-usage: azfinsim.py [-h] -e BATCH_ENDPOINT {pool,job,cache} ...
-...
-```
-
-#### Option 2: Using Python
+To run these applications, you need Python (3.8 or newer) installed on your workstation. Using
+a virtual environment is not needed, but highly recommended. The following
+snippets show how to install the controller application.
 
 ```sh
 # you may want to use a virtual environment
@@ -322,8 +304,7 @@ usage: azfinsim.py [-h] -e BATCH_ENDPOINT {pool,job,cache} ...
 
 The AzFinSim demo application allows us to inspect the batch pool, resize it,
 and submit jobs to populate the cache with trades and process the trades from cache.
-The following snippets show how this can be done. Here, replace `python3` with
-`docker run -it batch-app:latest` if using the Docker option.
+The following snippets show how this can be done.
 
 ```sh
 # these variables must be set to the values obtained on a
@@ -351,26 +332,47 @@ python3 -m batch_controller.azfinsim pool -e $AZ_BATCH_ENDPOINT --resize 1
 # the resize complete.
 ```
 
+### Using Redis Cache
+
 The AzFinSim application analyzes trades from the redis cache deployed as
 part of the deployment. Thus, one of the first tasks is to populate the redis cache.
 Let's fill up the cache with 100,000 synthetic trades using the following command.
 
 ```sh
-# populate 100,000 trades using 10 parallel tasks
+# populate 1000 trades using 20 parallel tasks
 python3 -m batch_controller.azfinsim cache -e $AZ_BATCH_ENDPOINT -c $AZ_ACR_NAME \
-         --trade-window 100000 \
-         --tasks 10
+         --trade-window 1000 \
+         --tasks 20
 ```
 
 Once the cache has been populated, we can analyze it by submitting another job as
 follows.
 
 ```sh
-# process 100,000 trades using 10 parallel tasks
+# process 1000 trades using 20 parallel tasks
 python3 -m batch_controller.azfinsim job -e $AZ_BATCH_ENDPOINT -c $AZ_ACR_NAME \
-         --trade-window 100000 \
-         --tasks 10
+         --trade-window 1000 \
+         --tasks 20
 ```
+
+These commands submit jobs to the batch account deployed. You will have to wait for the cache population
+tasks to complete before dispatching the trade processing tasks. You can monitor the status of the tasks using
+Batch Explorer or the Azure portal.
+
+Another option provided in this demo is to submit these jobs as a workflow. The workflow
+relies on task dependencies supported by Azure Batch. Tasks within a job can be made to depend
+on other tasks in the same job. This allows us to submit a job with a set of tasks that
+are expected to be executed in a particular order. The following command submits the
+cache population and trade processing tasks as a workflow.
+
+```sh
+python3 -m batch_controller.azfinsim workflow -e $AZ_BATCH_ENDPOINT -c $AZ_ACR_NAME \
+         --trade-window 1000 \
+         --tasks 20
+```
+
+This will submit 10 tasks to populate the cache and 10 tasks to process the trades. Each task to process trade
+will depend on the corresponding task to populate the cache.
 
 ### Monitoring
 

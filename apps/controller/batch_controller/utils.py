@@ -69,3 +69,43 @@ def submit_job(endpoint, pool_id, num_tasks, task_command_lines, task_container_
         'task_ids': ['task_{}'.format(index) for index in range(num_tasks)],
         'pool_id': pool_id,
     }
+
+def submit_workflow(endpoint, pool_id, tasks: list,
+                    job_id_prefix='workflow'):
+    """submit a new workflow"""
+    client = login(endpoint)
+    job_id = "{}-{}".format(job_id_prefix, unique_id())
+
+    pool_info=models.PoolInformation(pool_id=pool_id)
+    client.job.add(models.JobAddParameter(id=job_id, pool_info=pool_info, uses_task_dependencies=True))
+
+    res = client.task.add_collection(job_id, tasks)
+
+    # once tasks are added to job, update the job to terminate the job
+    # once all tasks complete
+    client.job.update(job_id=job_id,
+        job_update_parameter=models.JobUpdateParameter(on_all_tasks_complete='terminateJob',
+        pool_info=pool_info))
+
+    return {
+        'job_id': job_id,
+        'pool_id': pool_id,
+    }
+
+def create_tasks(task_command_lines,
+                 task_id_prefix='task',
+                 task_container_image=None, container_run_options=None, elevatedUser=False,
+                 get_dependencies=None):
+    """create a list of tasks"""
+    user = models.UserIdentity(\
+        auto_user=models.AutoUserSpecification(scope='pool',
+            elevation_level='admin')) if elevatedUser else None
+    task_container_settings = models.TaskContainerSettings(image_name=task_container_image,
+        container_run_options=container_run_options) if task_container_image else None
+
+    return [models.TaskAddParameter(id="{}_{}".format(task_id_prefix, index),
+            command_line=cmd,
+            user_identity=user,
+            container_settings=task_container_settings,
+            depends_on=models.TaskDependencies(task_ids=get_dependencies(index)) if get_dependencies else None) \
+                for index, cmd in enumerate(task_command_lines)]
