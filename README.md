@@ -374,6 +374,38 @@ python3 -m batch_controller.azfinsim workflow -e $AZ_BATCH_ENDPOINT -c $AZ_ACR_N
 This will submit 10 tasks to populate the cache and 10 tasks to process the trades. Each task to process trade
 will depend on the corresponding task to populate the cache.
 
+### Using files
+
+The AzFinSim application can also analyze trades from files. The deployment is setup to use a storage account
+with blob storage to store the files. The storage account it automatically mounted on the compute nodes
+in the pool. The following command submits a job to generate/process trades to/from files.
+
+```sh
+# generate 1000 trades in a single task
+python3 -m batch_controller.azfinsim cache-fs -e $AZ_BATCH_ENDPOINT -c $AZ_ACR_NAME \
+         --trade-window 1000 \
+         --file "trades.csv"
+
+# process 1000 trades in a single task
+python3 -m batch_controller.azfinsim job-fs -e $AZ_BATCH_ENDPOINT -c $AZ_ACR_NAME \
+         --file "trades.csv"
+```
+
+For files, the demo is setup to use a single task to generate all trades and save to a single file. And then process that
+entire file using a single processing task.
+
+To do concurrent processing of trades, we can use the workflow option as follows. The workflow generates a single trades file as the
+first task. That file is then split into multiple files to match number of tasks requested. Then each file is processed by a task
+to produce the results file for that task. Finally, the results files are merged into a single file.
+
+```sh
+# generate 1000 trades -> split to 20 files -> process 20 files -> merge results
+python3 -m batch_controller.azfinsim workflow-fs -e $AZ_BATCH_ENDPOINT -c $AZ_ACR_NAME \
+         --trade-window 1000 \
+         --tasks 20 \
+         --file "trades.csv"
+```
+
 ### Monitoring
 
 Currently, you can use the Azure portal to monitor. Navigate to the batch account
