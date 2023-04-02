@@ -78,7 +78,7 @@ def get_parser():
     return parser
 
 def task_command_line_generator(args):
-    command = '-m azfinsim.azfinsim --config /opt/secrets/config.json --start-trade {start} --trade-window {delta} --failure {failure} --algorithm {algorithm}'
+    command = '-m azfinsim.azfinsim --no-color --config /opt/secrets/config.json --start-trade {start} --trade-window {delta} --failure {failure} --algorithm {algorithm}'
     command_synthetic = ' --delay-start {delay_start} --mem-usage {mem_usage} --task-duration {task_duration}'
 
     delta = args.trade_window // args.tasks
@@ -94,7 +94,7 @@ def task_command_line_generator(args):
         counter += 1
 
 def populate_command_line_generator(args):
-    command = '-m azfinsim.generator --config /opt/secrets/config.json --start-trade {start} --trade-window {delta}'
+    command = '-m azfinsim.generator --no-color --config /opt/secrets/config.json --start-trade {start} --trade-window {delta}'
 
     delta = args.trade_window // args.tasks
     assert delta >= 0
@@ -145,7 +145,7 @@ def execute_workflow(args)->None:
         job_id_prefix='workflow')
 
 def cache_fs_command_lines(args):
-    task_cmd = f'-m azfinsim.generator --config /opt/secrets/config.json --trade-window {args.trade_window} ' + \
+    task_cmd = f'-m azfinsim.generator --no-color --config /opt/secrets/config.json --trade-window {args.trade_window} ' + \
                f'--cache-type filesystem --cache-path /mnt/batch/tasks/fsmounts/trades/{args.file}'
     return [task_cmd]
 
@@ -160,7 +160,7 @@ def execute_cache_fs(args)->None:
 def execute_fs_command_lines_generator(args):
     name, ext = os.path.splitext(args.file)
     for i in range(args.tasks):
-        task_cmd = f'-m azfinsim.azfinsim --config /opt/secrets/config.json ' + \
+        task_cmd = f'-m azfinsim.azfinsim --no-color --config /opt/secrets/config.json ' + \
                    f'--cache-type filesystem --cache-path /mnt/batch/tasks/fsmounts/trades/{name}.{i}{ext} ' + \
                    f'--algorithm {args.algorithm} --failure {args.failure}'
         yield task_cmd
@@ -213,22 +213,23 @@ def execute_workflow_fs(args)->None:
 
     utils.submit_workflow(endpoint=args.batch_endpoint, pool_id='azfinsim-pool',
         tasks=gen_tasks + split_tasks + pricing_tasks + merge_tasks,
+        # tasks=merge_tasks,
         job_id_prefix='workflow-fs')
 
 def split_fs_command_lines(args, work_dir):
     tasks = args.tasks
     num_trades = args.trade_window
     trades_per_file = math.ceil(num_trades / tasks)
-    task_cmd = f'-m azfinsim.split --config /opt/secrets/config.json --trade-window {trades_per_file} ' + \
+    task_cmd = f'-m azfinsim.split --no-color --config /opt/secrets/config.json --trade-window {trades_per_file} ' + \
                f'--cache-path /mnt/batch/tasks/fsmounts/trades/{args.file} ' \
                f'--output-path /mnt/batch/tasks/fsmounts/trades/{work_dir}'
     return [task_cmd]
 
 def merge_fs_command_lines(args, work_dir):
     name, ext = os.path.splitext(args.file)
-    task_cmd = f'-m azfinsim.concat --config /opt/secrets/config.json ' + \
-               f'--cache-type filesystem --cache-path /mnt/batch/tasks/fsmounts/trades/{work_dir}/{name}.[0-9]*{ext} ' + \
-               f'--output-path /mnt/batch/tasks/fsmounts/trades/{name}.result{ext}'
+    task_cmd = f'-m azfinsim.concat --no-color --config /opt/secrets/config.json ' + \
+               f'--output-path /mnt/batch/tasks/fsmounts/trades/{name}.result{ext} ' + \
+               f'--cache-path "/mnt/batch/tasks/fsmounts/trades/{work_dir}/{name}.[0-9]*.results{ext}"'
     return [task_cmd]
 
 def execute(args)->None:
