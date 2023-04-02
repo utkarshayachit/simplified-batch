@@ -264,6 +264,10 @@ Here are the optional parameters:
   when set to true, enables the trame application demo and deploys extra resources needed
   for the demo.
 
+* **enableAzFinSimRedisCache** *(bool, **default-value**: `false`)*:
+  when set to true, enables the Redis cache for AzFinSim application demo. Deployment of the redis
+  cache alone can take 20+ minutes.
+
 * **branchName** *(string, **default-value**: `main`)*:
   primarily intended for development purposes, identifies the branch from this repository
   to use in the deployment.
@@ -332,10 +336,11 @@ python3 -m batch_controller.azfinsim pool -e $AZ_BATCH_ENDPOINT --resize 1
 # the resize complete.
 ```
 
-### Using Redis Cache
+### Using Redis Cache (if enableAzFinSimRedisCache is true)
 
-The AzFinSim application analyzes trades from the redis cache deployed as
-part of the deployment. Thus, one of the first tasks is to populate the redis cache.
+The AzFinSim application can analyze trades from the redis cache deployed as
+part of the deployment when deployed with `enableAzFinSimRedisCache=true` parameter.
+One of the first tasks is to populate the redis cache.
 Let's fill up the cache with 100,000 synthetic trades using the following command.
 
 ```sh
@@ -376,7 +381,8 @@ will depend on the corresponding task to populate the cache.
 
 ### Using files
 
-The AzFinSim application can also analyze trades from files. The deployment is setup to use a storage account
+Another mode supported by AzFinSim is to read/write trades from/to files. This is the only mode supported
+when `enableAzFinSimRedisCache=false`. The deployment is setup to use a storage account
 with blob storage to store the files. The storage account it automatically mounted on the compute nodes
 in the pool. The following command submits a job to generate/process trades to/from files.
 

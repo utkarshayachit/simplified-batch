@@ -45,6 +45,9 @@ param enableLuleshCatalyst bool = false
 @description('enable trame demo')
 param enableTrame bool = false
 
+@description('enable redis cache for AzFinSim')
+param enableAzFinSimRedisCache bool = false
+
 @description('repository branch name')
 param branchName string = 'main'
 
@@ -194,6 +197,7 @@ module dplAzFinSim 'apps/azfinsim/resources.bicep' = if (enableAzFinSim) {
     environment: environment
     prefix: prefix
     branchName: branchName
+    enableRedis: enableAzFinSimRedisCache
     keyVaultInfo: {
       name: dplResources.outputs.keyVault.name
       group: mainRG.name
@@ -215,7 +219,6 @@ module dplAzFinSim 'apps/azfinsim/resources.bicep' = if (enableAzFinSim) {
       group: appInsightsRG.name
     } : {})
     poolSubnetId: enableHubAndSpoke? dplHubSpoke.outputs.vnetSpokeOne.snetPool.id : dplSpoke.outputs.vnet.snetPool.id
-
     logAnalyticsWorkspaceId: (enableDiagnostics ? dplApplicationInsights.outputs.logAnalyticsWorkspace.id : '')
   }
 }

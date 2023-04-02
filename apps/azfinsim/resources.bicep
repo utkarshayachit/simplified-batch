@@ -31,6 +31,9 @@ param prefix string
 
 @description('repository branch name')
 param branchName string
+
+@description('enable redis cache')
+param enableRedis bool
 ///@}
 
 ///@{
@@ -90,8 +93,6 @@ resource managedIdentity 'Microsoft.ManagedIdentity/userAssignedIdentities@2022-
   name: miInfo.name
   scope: resourceGroup(miInfo.group)
 }
-
-var enableRedis = true
 
 @description('redis cache used by the AzFinSim application')
 resource redisCache 'Microsoft.Cache/redis@2022-06-01' = if (enableRedis) {
