@@ -1,3 +1,9 @@
+> __DEPRECATION NOTICE__: This project has been deprecated and largely left around as a historical reference.
+> The explorations done here led to the development of a new codebase for deploying Batch and related resources in Azure
+> [here](https://github.com/utkarshayachit/azbatch-starter). As of 06/2023, the azfinsim and web-visualization applications have
+> been ported over to this new accelerator. The [docs](https://utkarshayachit.github.io/azbatch-starter/) for the accelerator 
+> include several step-by-step tutorials for different applications in different configurations.
+
 # Simplified Azure Batch Deployment for HPC use-cases
 
 This project demonstrates how to setup an Azure environment that uses Azure Batch
